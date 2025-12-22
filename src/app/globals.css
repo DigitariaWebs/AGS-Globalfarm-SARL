@@ -65,7 +65,10 @@
     --color-brand: #16a34a; /* Vibrant Green */
     --color-cta: #16a34a; /* CTA Green */
     --color-cta-hover: #15803d; /* Darker Green */
+    --color-secondary-brand: #f59e0b; /* Earthy Amber/Gold */
     --color-border: #e5e7eb; /* Light Gray */
+    --color-lavender: #E0E7FF; /* Soft Lavender for image backgrounds */
+    --color-mint: #D1FAE5; /* Soft Mint for image backgrounds */
   }
 
   .dark {

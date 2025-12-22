@@ -87,7 +87,7 @@ export default function Header() {
                     <MotionLink
                       href={item.href}
                       className={[
-                        "text-base rounded-md px-2 py-1 transition-colors",
+                        "text-base rounded-md px-2 py-1 transition-colors relative",
                         isActive(item.href) ? "font-semibold" : "",
                       ].join(" ")}
                       style={{
@@ -109,6 +109,16 @@ export default function Header() {
                       }}
                     >
                       {item.label}
+                      {item.label === "Boutique" && (
+                        <span
+                          className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0.5 rounded-full text-white font-bold shadow-sm"
+                          style={{
+                            backgroundColor: "var(--color-secondary-brand)",
+                          }}
+                        >
+                          New
+                        </span>
+                      )}
                     </MotionLink>
                   </li>
                 ))}
