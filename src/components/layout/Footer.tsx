@@ -1,0 +1,174 @@
+"use client";
+
+import Link from "next/link";
+import Image from "next/image";
+import { Facebook, Instagram, Linkedin } from "lucide-react";
+
+export default function Footer() {
+
+  return (
+    <footer className="w-full bg-background py-12 lg:py-16">
+      <div className="w-full max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8">
+        <hr className="border-t-2 border-primary mb-8" />
+
+        {/* Footer Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 mb-8">
+          {/* Company Info */}
+          <div className="lg:col-span-2">
+            <Image
+              src="/Logo.png"
+              alt="AGS Global Farm"
+              width={428}
+              height={428}
+              className="h-12 w-auto mb-4"
+            />
+            <p className="text-base font-normal leading-[28px] text-muted-foreground">
+              AGS Global Farm révolutionne l&apos;agriculture au Sénégal en alliant
+              techniques modernes et formation pratique. Nous cultivons l&apos;avenir
+              de l&apos;agriculture africaine.
+            </p>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4 className="text-xl font-semibold leading-[25px] text-foreground mb-4">
+              Navigation
+            </h4>
+            <div className="space-y-3">
+              <Link
+                href="/"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Accueil
+              </Link>
+              <Link
+                href="/about"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                À propos
+              </Link>
+              <Link
+                href="/formation"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Formation
+              </Link>
+              <Link
+                href="/boutique"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Boutique
+              </Link>
+              <Link
+                href="/contact"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Contact
+              </Link>
+            </div>
+          </div>
+
+          {/* Services */}
+          <div>
+            <h4 className="text-xl font-semibold leading-[25px] text-foreground mb-4">
+              Nos Services
+            </h4>
+            <div className="space-y-3">
+              <Link
+                href="#services"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Production Agricole
+              </Link>
+              <Link
+                href="#formation"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Formation Pratique
+              </Link>
+              <Link
+                href="#services"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Techniques Modernes
+              </Link>
+              <Link
+                href="#services"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Innovation & Conseil
+              </Link>
+            </div>
+          </div>
+
+          {/* Resources */}
+          <div>
+            <h4 className="text-xl font-semibold leading-[25px] text-foreground mb-4">
+              Ressources
+            </h4>
+            <div className="space-y-3">
+              <Link
+                href="#events"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Événements
+              </Link>
+              <Link
+                href="#blog"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Blog Agricole
+              </Link>
+              <Link
+                href="#faq"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                FAQ
+              </Link>
+              <Link
+                href="#testimonials"
+                className="block text-base font-normal leading-6 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+              >
+                Témoignages
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Bottom */}
+        <div className="flex flex-col sm:flex-row justify-between items-center pt-8 border-t-2 border-primary/20">
+          <p className="text-sm font-medium leading-[17px] text-muted-foreground mb-4 sm:mb-0">
+            © 2025 AGS Global Farm SARL. Tous droits réservés.
+          </p>
+          <div className="flex items-center gap-6">
+            <a
+              href="https://facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Facebook className="w-6 h-6" />
+            </a>
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Instagram className="w-6 h-6" />
+            </a>
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Linkedin className="w-6 h-6" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+

@@ -20,18 +20,18 @@ export default function AboutSection() {
               <Sprout className="w-4 h-4" />À propos de nous
             </div>
             <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground leading-tight">
-              L'agriculture de demain se cultive{" "}
-              <span className="text-primary">aujourd'hui</span>
+              L&apos;agriculture de demain se cultive{" "}
+              <span className="text-primary">aujourd&apos;hui</span>
             </h2>
             <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-              AGS Global Farm est bien plus qu'une simple exploitation agricole.
-              Nous sommes un centre d'innovation dédié à la transformation de
-              l'agriculture en Afrique.
+              AGS Global Farm est bien plus qu&apos;une simple exploitation agricole.
+              Nous sommes un centre d&apos;innovation dédié à la transformation de
+              l&apos;agriculture en Afrique.
             </p>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               Notre mission est double : produire de manière durable grâce aux
               technologies modernes, et former la prochaine génération
-              d'agri-preneurs capables de relever les défis alimentaires de
+              d&apos;agri-preneurs capables de relever les défis alimentaires de
               notre continent.
             </p>
 
@@ -45,7 +45,7 @@ export default function AboutSection() {
                     Durable
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Pratiques respectueuses de l'environnement
+                    Pratiques respectueuses de l&apos;environnement
                   </p>
                 </div>
               </div>
@@ -81,21 +81,6 @@ export default function AboutSection() {
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent" />
-
-              {/* Floating Badge */}
-              <motion.div
-                className="absolute bottom-8 left-8 right-8 bg-white/95 backdrop-blur p-6 rounded-2xl shadow-lg border border-white/20"
-                initial={{ y: 20, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="text-4xl font-bold text-primary">10+</div>
-                  <div className="text-sm font-medium text-muted-foreground">
-                    Années d'expérience combinée dans l'agritech
-                  </div>
-                </div>
-              </motion.div>
             </div>
 
             {/* Decorative elements */}

@@ -33,9 +33,7 @@ export default function Header() {
   const logout = () => console.log("Logout");
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [servicesDropdownOpen, setServicesDropdownOpen] = React.useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = React.useState(false);
-  const dropdownTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const isActive = (href: string): boolean => {
     if (href === "/") {
@@ -43,14 +41,6 @@ export default function Header() {
     }
     return pathname?.startsWith(href) ?? false;
   };
-
-  React.useEffect(() => {
-    return () => {
-      if (dropdownTimeoutRef.current) {
-        clearTimeout(dropdownTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return (
     <>

@@ -3,12 +3,8 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import type { CSSProperties } from "react";
-import Link from "next/link";
-// Mocking the modal provider since it doesn't exist yet
-const useModal = () => ({ openModal: (type: string) => console.log(type) });
 
 export default function HeroSection() {
-  const { openModal } = useModal();
   // Using placeholder images that exist in the project or generic ones
   const images = [
     {
@@ -123,7 +119,7 @@ export default function HeroSection() {
             }}
             aria-label="Slogan: Cultivons l'avenir ensemble"
           >
-            Cultivons l'avenir ensemble
+            Cultivons l&apos;avenir ensemble
           </span>
         </motion.div>
         <motion.p
