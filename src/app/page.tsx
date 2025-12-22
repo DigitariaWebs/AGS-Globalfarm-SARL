@@ -9,9 +9,9 @@ export default function Home() {
     <main className="min-h-screen">
       <HeroSection />
       <AboutSection />
-      <ActivitiesSection />
-      <TrainingSection />
-      <EventsSection />
+      {/* <ActivitiesSection /> */}
+      {/* <TrainingSection /> */}
+      {/* <EventsSection /> */}
     </main>
   );
 }
