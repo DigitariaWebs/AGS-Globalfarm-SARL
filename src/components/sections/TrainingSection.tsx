@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowRight, Sprout } from "lucide-react";
+import { CheckCircle2, Sprout } from "lucide-react";
 
 export default function TrainingSection() {
   const benefits = [
