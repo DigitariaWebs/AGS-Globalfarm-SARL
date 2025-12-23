@@ -68,6 +68,11 @@ const config: Config = {
           "5": "hsl(var(--chart-5))",
         },
       },
+      fontFamily: {
+        jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
+        roboto: ['Roboto', 'sans-serif'],
+        vibes: ['"Great Vibes"', 'cursive'],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 0.125rem)",

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&family=Roboto:wght@400&family=Great+Vibes&display=swap');
 @import "tailwindcss";
 
 @layer base {
@@ -69,6 +70,10 @@
     --color-border: #e5e7eb; /* Light Gray */
     --color-lavender: #E0E7FF; /* Soft Lavender for image backgrounds */
     --color-mint: #D1FAE5; /* Soft Mint for image backgrounds */
+
+    /* Typography */
+    --font-family-base: 'Plus Jakarta Sans', 'Roboto', sans-serif;
+    --font-family-decorative: 'Great Vibes', cursive;
   }
 
   .dark {
@@ -137,6 +142,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: var(--font-family-base);
     font-feature-settings: "rlig" 1, "calt" 1;
     /* Vibrant organic texture for agricultural feel */
       background-image:
