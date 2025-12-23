@@ -16,17 +16,29 @@ export default function AboutSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-6">
-              <Sprout className="w-4 h-4" />À propos de nous
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold mb-6"
+              style={{
+                backgroundColor: "var(--color-secondary-brand, #f59e0b)20",
+                color: "var(--color-secondary-brand, #f59e0b)",
+              }}
+            >
+              <Sprout
+                className="w-4 h-4"
+                style={{ color: "var(--color-secondary-brand, #f59e0b)" }}
+              />
+              À propos de nous
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground leading-tight">
-              L&apos;agriculture de demain se cultive{" "}
-              <span className="text-primary">aujourd&apos;hui</span>
+            <h2
+              className="text-3xl md:text-5xl font-bold mb-6 leading-tight"
+              style={{ color: "var(--color-brand, #16a34a)" }}
+            >
+              L&apos;agriculture de demain se cultive aujourd&apos;hui
             </h2>
             <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-              AGS Global Farm est bien plus qu&apos;une simple exploitation agricole.
-              Nous sommes un centre d&apos;innovation dédié à la transformation de
-              l&apos;agriculture en Afrique.
+              AGS Global Farm est bien plus qu&apos;une simple exploitation
+              agricole. Nous sommes un centre d&apos;innovation dédié à la
+              transformation de l&apos;agriculture en Afrique.
             </p>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               Notre mission est double : produire de manière durable grâce aux
@@ -73,14 +85,30 @@ export default function AboutSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <div className="relative aspect-4/5 md:aspect-square rounded-3xl overflow-hidden shadow-2xl">
-              <Image
-                src="/BlackManWithPlants.png"
-                alt="Agriculture Moderne"
-                fill
-                className="object-cover"
+            <div className="relative w-full max-w-[520px] mx-auto md:mx-0 md:ml-auto">
+              {/* Accent rounded frame behind the image */}
+              <div
+                className="absolute -inset-2 sm:-inset-3 md:-inset-4 rounded-[2.25rem] md:rounded-[3.5rem] border-[6px] sm:border-8 md:border-10 opacity-60"
+                style={{ borderColor: "#f59e0b40" }}
+                aria-hidden="true"
               />
-              <div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent" />
+
+              <motion.figure
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                whileHover={{ y: 0 }}
+                className="group relative z-10 overflow-hidden rounded-4xl md:rounded-[2.5rem] shadow-sm ring-1 ring-black/5 will-change-transform aspect-4/5 md:aspect-square"
+              >
+                <Image
+                  src="/BlackManWithPlants.png"
+                  alt="Agriculture Moderne"
+                  fill
+                  className="object-cover object-center origin-center transition-transform duration-300 group-hover:scale-105 will-change-transform"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-black/20 opacity-0 transition-opacity duration-300 group-hover:opacity-10" />
+              </motion.figure>
             </div>
 
             {/* Decorative elements */}
