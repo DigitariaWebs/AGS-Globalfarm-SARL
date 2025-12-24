@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { MapPin, Clock, ArrowRight, Calendar } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const featuredEvent = {
   day: "15",
@@ -44,6 +45,20 @@ const upcomingEvents = [
 ];
 
 export default function EventsSection() {
+  const router = useRouter();
+
+  const handleReservePlace = (eventTitle: string) => {
+    router.push(
+      `/contact?subject=event&event=${encodeURIComponent(eventTitle)}`
+    );
+  };
+
+  const handleEventClick = (event: (typeof upcomingEvents)[0]) => {
+    router.push(
+      `/contact?subject=event&event=${encodeURIComponent(event.title)}`
+    );
+  };
+
   return (
     <section className="w-full py-16 px-4">
       <div className="max-w-7xl mx-auto">
@@ -134,6 +149,7 @@ export default function EventsSection() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  onClick={() => handleReservePlace(featuredEvent.title)}
                   className="inline-flex items-center gap-2 px-8 py-4 rounded-full font-bold text-white shadow-lg transition-all duration-300 w-fit"
                   style={{
                     backgroundColor: "var(--color-brand, #16a34a)",
@@ -162,6 +178,7 @@ export default function EventsSection() {
             {upcomingEvents.map((event, index) => (
               <motion.div
                 key={index}
+                onClick={() => handleEventClick(event)}
                 className="group relative bg-white p-6 rounded-2xl border border-border/50 hover:border-primary/30 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -177,7 +194,9 @@ export default function EventsSection() {
                       backgroundColor: "var(--color-brand, #16a34a)",
                     }}
                   >
-                    <div className="text-xl font-bold leading-none">{event.day}</div>
+                    <div className="text-xl font-bold leading-none">
+                      {event.day}
+                    </div>
                     <div className="text-[10px] font-semibold uppercase mt-0.5">
                       {event.month}
                     </div>
@@ -188,7 +207,8 @@ export default function EventsSection() {
                     <div
                       className="inline-block px-2 py-1 rounded text-[10px] font-bold mb-2"
                       style={{
-                        backgroundColor: "var(--color-secondary-brand, #f59e0b)20",
+                        backgroundColor:
+                          "var(--color-secondary-brand, #f59e0b)20",
                         color: "var(--color-secondary-brand, #f59e0b)",
                       }}
                     >
@@ -214,27 +234,6 @@ export default function EventsSection() {
                 </div>
               </motion.div>
             ))}
-
-            {/* View All Link */}
-            <motion.div
-              className="mt-8 text-center"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <motion.a
-                href="#calendrier"
-                className="group inline-flex items-center gap-2 font-bold text-base transition-all duration-300"
-                style={{ color: "var(--color-brand, #16a34a)" }}
-                whileHover={{ x: 4 }}
-              >
-                <span className="border-b-2 border-current pb-0.5">
-                  Voir tous les événements
-                </span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </motion.a>
-            </motion.div>
           </div>
         </div>
       </div>

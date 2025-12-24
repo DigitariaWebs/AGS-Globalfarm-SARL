@@ -573,7 +573,7 @@ export default function FormationPage() {
 
                 {/* Connector Arrow */}
                 {index < processSteps.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-gray-200">
+                  <div className="hidden lg:block absolute top-8 left-[65%] w-[80%] h-0.5 bg-gray-200">
                     <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   </div>
                 )}

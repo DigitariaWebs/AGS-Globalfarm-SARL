@@ -140,11 +140,12 @@ export default function ContactPage() {
   useEffect(() => {
     const subject = searchParams.get("subject");
     const program = searchParams.get("program");
+    const event = searchParams.get("event");
     
     if (subject) {
       setFormData((prev) => ({
         ...prev,
-        subject: subject === "training" ? "training" : subject,
+        subject: subject === "training" ? "training" : subject === "event" ? "event" : subject,
       }));
     }
     
@@ -152,6 +153,13 @@ export default function ContactPage() {
       setFormData((prev) => ({
         ...prev,
         message: `Bonjour,\n\nJe souhaite m'inscrire à la formation : ${decodeURIComponent(program)}\n\nMerci de me contacter pour plus d'informations.\n\nCordialement,`,
+      }));
+    }
+    
+    if (event) {
+      setFormData((prev) => ({
+        ...prev,
+        message: `Bonjour,\n\nJe souhaite réserver une place pour l'événement : ${decodeURIComponent(event)}\n\nMerci de me contacter pour confirmer ma réservation.\n\nCordialement,`,
       }));
     }
   }, [searchParams]);
@@ -332,7 +340,7 @@ export default function ContactPage() {
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="lg:col-span-2 bg-white rounded-2xl p-8 shadow-lg"
+              className="lg:col-span-2 bg-white rounded-2xl p-8 shadow-lg flex flex-col"
             >
               <div className="mb-6">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -365,11 +373,14 @@ export default function ContactPage() {
                   </p>
                 </motion.div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-5 flex flex-col flex-1"
+                >
                   <div className="grid md:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nom Complet *
+                        Nom Complet <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -384,7 +395,7 @@ export default function ContactPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email *
+                        Email <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="email"
@@ -415,7 +426,7 @@ export default function ContactPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Sujet *
+                        Sujet <span className="text-red-500">*</span>
                       </label>
                       <select
                         name="subject"
@@ -427,6 +438,7 @@ export default function ContactPage() {
                         <option value="">Sélectionnez un sujet</option>
                         <option value="products">Produits et commandes</option>
                         <option value="training">Formations</option>
+                        <option value="event">Événements</option>
                         <option value="partnership">Partenariats</option>
                         <option value="technical">Support technique</option>
                         <option value="other">Autre</option>
@@ -434,24 +446,24 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="flex-1 flex flex-col">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Message *
+                      Message <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
                       required
-                      rows={6}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all resize-none"
+                      rows={10}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all resize-none min-h-[280px] flex-1"
                       placeholder="Décrivez votre demande en détail..."
                     ></textarea>
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-base font-semibold"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-base font-semibold mt-auto"
                   >
                     <Send className="w-5 h-5 mr-2" />
                     Envoyer le Message
@@ -526,7 +538,7 @@ export default function ContactPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-white/50">
+      <section className="py-16">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -565,31 +577,6 @@ export default function ContactPage() {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Map/Location Section (Placeholder) */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-white rounded-2xl overflow-hidden shadow-lg"
-          >
-            <div className="aspect-video bg-gray-200 relative">
-              {/* Placeholder for map - you can integrate Google Maps or another service */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium">
-                    Yaoundé, Cameroun
-                  </p>
-                  <p className="text-gray-500 text-sm">Quartier Bastos</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </section>
     </div>
