@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -9,15 +9,11 @@ import {
   Users,
   Clock,
   Award,
-  CheckCircle2,
   BookOpen,
   Target,
   Sprout,
   TrendingUp,
-  Calendar,
-  MapPin,
   Phone,
-  Mail,
   ArrowRight,
   Leaf,
   Tractor,
@@ -209,8 +205,9 @@ export default function FormationPage() {
   const [backgroundColor, setBackgroundColor] = useState("#faf9f6");
 
   // Get the actual background color from the body element
-  useEffect(() => {
+  useLayoutEffect(() => {
     const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBackgroundColor(bodyBg);
   }, []);
 
@@ -284,8 +281,8 @@ export default function FormationPage() {
               </h1>
               <p className="text-white/90 text-lg mb-10 max-w-3xl mx-auto">
                 Développez vos compétences avec nos formations pratiques animées
-                par des experts. De l'agriculture biologique à la gestion
-                d'entreprise, trouvez la formation qui vous convient.
+                par des experts. De l&apos;agriculture biologique à la gestion
+                d&apos;entreprise, trouvez la formation qui vous convient.
               </p>
 
               <div className="flex flex-wrap gap-4 justify-center">
@@ -408,7 +405,7 @@ export default function FormationPage() {
             </h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
               Découvrez nos formations complètes adaptées à tous les niveaux, du
-              débutant à l'expert.
+              débutant à l&apos;expert.
             </p>
           </motion.div>
 
@@ -517,7 +514,7 @@ export default function FormationPage() {
                           className="flex-1 bg-green-600 hover:bg-green-700 text-white shrink-0"
                           onClick={() => handleEnroll(program.id)}
                         >
-                          S'inscrire
+                          S&apos;inscrire
                           <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                       </div>
@@ -720,7 +717,7 @@ export default function FormationPage() {
                       }}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                     >
-                      S'inscrire Maintenant
+                      S&apos;inscrire Maintenant
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>

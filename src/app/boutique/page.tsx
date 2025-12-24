@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useLayoutEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Star, Sprout, Plus, Leaf } from "lucide-react";
@@ -129,8 +129,9 @@ export default function BoutiquePage() {
   const { addToCart } = useCart();
 
   // Get the actual background color from the body element
-  useEffect(() => {
+  useLayoutEffect(() => {
     const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBackgroundColor(bodyBg);
   }, []);
 

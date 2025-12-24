@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -129,38 +129,50 @@ export default function ContactPage() {
     message: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const initializedRef = useRef(false);
 
   // Get the actual background color from the body element
-  useEffect(() => {
+  useLayoutEffect(() => {
     const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBackgroundColor(bodyBg);
   }, []);
 
   // Pre-fill form from query parameters
   useEffect(() => {
+    if (initializedRef.current) return;
+
     const subject = searchParams.get("subject");
     const program = searchParams.get("program");
     const event = searchParams.get("event");
-    
-    if (subject) {
-      setFormData((prev) => ({
-        ...prev,
-        subject: subject === "training" ? "training" : subject === "event" ? "event" : subject,
-      }));
-    }
-    
-    if (program) {
-      setFormData((prev) => ({
-        ...prev,
-        message: `Bonjour,\n\nJe souhaite m'inscrire à la formation : ${decodeURIComponent(program)}\n\nMerci de me contacter pour plus d'informations.\n\nCordialement,`,
-      }));
-    }
-    
-    if (event) {
-      setFormData((prev) => ({
-        ...prev,
-        message: `Bonjour,\n\nJe souhaite réserver une place pour l'événement : ${decodeURIComponent(event)}\n\nMerci de me contacter pour confirmer ma réservation.\n\nCordialement,`,
-      }));
+
+    if (subject || program || event) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormData((prev) => {
+        const updates: Partial<typeof prev> = {};
+
+        if (subject) {
+          updates.subject =
+            subject === "training"
+              ? "training"
+              : subject === "event"
+              ? "event"
+              : subject;
+        }
+
+        if (program) {
+          updates.message = `Bonjour,\n\nJe souhaite m'inscrire à la formation : ${decodeURIComponent(
+            program
+          )}\n\nMerci de me contacter pour plus d'informations.\n\nCordialement,`;
+        } else if (event) {
+          updates.message = `Bonjour,\n\nJe souhaite réserver une place pour l'événement : ${decodeURIComponent(
+            event
+          )}\n\nMerci de me contacter pour confirmer ma réservation.\n\nCordialement,`;
+        }
+
+        return { ...prev, ...updates };
+      });
+      initializedRef.current = true;
     }
   }, [searchParams]);
 

@@ -30,7 +30,11 @@ export default function Header() {
   // Mocking auth/modal for now to match visual style without crashing
   const user = null;
   const isLoading = false;
-  const openModal = (type: string) => console.log("Open modal:", type);
+  const openModal = (type: string) => {
+    if (type === "auth") {
+      window.location.href = "/login";
+    }
+  };
   const logout = () => console.log("Logout");
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
