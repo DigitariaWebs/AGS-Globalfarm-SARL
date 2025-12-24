@@ -5,7 +5,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import React from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, Sparkles, User } from "lucide-react";
+import { ChevronDown, Sparkles, User, ShoppingBag } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 const MotionLink = motion.create(Link);
 
@@ -34,6 +35,9 @@ export default function Header() {
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = React.useState(false);
+
+  // Cart context - use hook (will work since CartProvider wraps the app)
+  const { cartItemCount, setIsCartOpen } = useCart();
 
   const isActive = (href: string): boolean => {
     if (href === "/") {
@@ -116,7 +120,7 @@ export default function Header() {
             </nav>
 
             {/* CTA button - Right (Desktop) */}
-            <div className="hidden md:flex items-center shrink-0">
+            <div className="hidden md:flex items-center shrink-0 gap-3">
               {isLoading ? (
                 <div className="w-32 h-8 bg-gray-200 rounded-full animate-pulse"></div>
               ) : user ? (
@@ -156,10 +160,48 @@ export default function Header() {
                   Se connecter
                 </button>
               )}
+
+              {/* Cart Icon */}
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="relative inline-flex items-center justify-center rounded-full p-2 text-gray-700 hover:bg-gray-100 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                aria-label="Panier"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {cartItemCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm"
+                    style={{
+                      backgroundColor: "var(--color-secondary-brand)",
+                    }}
+                  >
+                    {cartItemCount > 9 ? "9+" : cartItemCount}
+                  </span>
+                )}
+              </button>
             </div>
 
             {/* Mobile menu toggle - Right (Mobile only) */}
-            <div className="flex md:hidden ml-auto">
+            <div className="flex md:hidden ml-auto items-center gap-2">
+              {/* Cart Icon - Mobile */}
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="relative inline-flex items-center justify-center rounded-full p-2 text-gray-700 hover:bg-gray-100 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                aria-label="Panier"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {cartItemCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm"
+                    style={{
+                      backgroundColor: "var(--color-secondary-brand)",
+                    }}
+                  >
+                    {cartItemCount > 9 ? "9+" : cartItemCount}
+                  </span>
+                )}
+              </button>
+
               <button
                 type="button"
                 aria-label={mobileOpen ? "Close menu" : "Open menu"}
