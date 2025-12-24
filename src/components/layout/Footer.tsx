@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Facebook, Instagram, Linkedin } from "lucide-react";
 
 export default function Footer() {
-
   return (
     <footer className="w-full bg-background py-12 lg:py-16">
       <div className="w-full max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -23,9 +22,9 @@ export default function Footer() {
               className="h-12 w-auto mb-4"
             />
             <p className="text-base font-normal leading-[28px] text-muted-foreground">
-              AGS Global Farm révolutionne l&apos;agriculture au Sénégal en alliant
-              techniques modernes et formation pratique. Nous cultivons l&apos;avenir
-              de l&apos;agriculture africaine.
+              AGS Global Farm révolutionne l&apos;agriculture au Sénégal en
+              alliant techniques modernes et formation pratique. Nous cultivons
+              l&apos;avenir de l&apos;agriculture africaine.
             </p>
           </div>
 
@@ -37,31 +36,31 @@ export default function Footer() {
             <div className="space-y-3">
               <Link
                 href="/"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Accueil
               </Link>
               <Link
-                href="/about"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                href="/a-propos"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 À propos
               </Link>
               <Link
                 href="/formation"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Formation
               </Link>
               <Link
                 href="/boutique"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Boutique
               </Link>
               <Link
                 href="/contact"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Contact
               </Link>
@@ -76,25 +75,25 @@ export default function Footer() {
             <div className="space-y-3">
               <Link
                 href="#services"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Production Agricole
               </Link>
               <Link
                 href="#formation"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Formation Pratique
               </Link>
               <Link
                 href="#services"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Techniques Modernes
               </Link>
               <Link
                 href="#services"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Innovation & Conseil
               </Link>
@@ -109,25 +108,25 @@ export default function Footer() {
             <div className="space-y-3">
               <Link
                 href="#events"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Événements
               </Link>
               <Link
                 href="#blog"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Blog Agricole
               </Link>
               <Link
                 href="#faq"
-                className="block text-base font-normal leading-5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 FAQ
               </Link>
               <Link
                 href="#testimonials"
-                className="block text-base font-normal leading-6 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                className="block text-base font-normal leading-5 text-muted-foreground hover:text-green-600 cursor-pointer transition-colors duration-200"
               >
                 Témoignages
               </Link>
@@ -145,7 +144,8 @@ export default function Footer() {
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-muted-foreground hover:text-green-600 transition-colors duration-200 hover:scale-110"
+              aria-label="Facebook"
             >
               <Facebook className="w-6 h-6" />
             </a>
@@ -153,7 +153,8 @@ export default function Footer() {
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-muted-foreground hover:text-green-600 transition-colors duration-200 hover:scale-110"
+              aria-label="Instagram"
             >
               <Instagram className="w-6 h-6" />
             </a>
@@ -161,7 +162,8 @@ export default function Footer() {
               href="https://linkedin.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-muted-foreground hover:text-green-600 transition-colors duration-200 hover:scale-110"
+              aria-label="LinkedIn"
             >
               <Linkedin className="w-6 h-6" />
             </a>

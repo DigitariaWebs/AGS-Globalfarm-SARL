@@ -152,6 +152,10 @@
         radial-gradient(circle at 10% 80%, hsl(var(--primary) / 0.04) 0%, transparent 35%);
   }
 
+  button {
+    cursor: pointer;
+  }
+
   /* Custom scrollbar styling */
   ::-webkit-scrollbar {
     width: 0.5rem;

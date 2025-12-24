@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Star, Sprout, Plus, Leaf } from "lucide-react";
@@ -123,9 +123,16 @@ const categories = ["Tout", "Légumes", "Semences", "Plants", "Matériel"];
 export default function BoutiquePage() {
   const [activeCategory, setActiveCategory] = useState("Tout");
   const [searchQuery, setSearchQuery] = useState("");
+  const [backgroundColor, setBackgroundColor] = useState("#faf9f6");
 
   // Use cart context
   const { addToCart } = useCart();
+
+  // Get the actual background color from the body element
+  useEffect(() => {
+    const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+    setBackgroundColor(bodyBg);
+  }, []);
 
   // Filter products
   const filteredProducts = products.filter((product) => {
@@ -138,7 +145,7 @@ export default function BoutiquePage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7]">
+    <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative pt-28 pb-32 overflow-hidden bg-emerald-900">
         <div className="absolute inset-0 opacity-10">
@@ -214,16 +221,26 @@ export default function BoutiquePage() {
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 1200 120"
             preserveAspectRatio="none"
-            className="relative block w-[calc(100%+1.3px)] h-[60px] fill-[#FDFBF7]"
+            className="relative block w-[calc(100%+1.3px)] h-[60px]"
           >
-            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"></path>
+            <path
+              d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
+              fill={backgroundColor}
+            ></path>
           </svg>
         </div>
       </section>
 
       {/* Category Filter */}
-      <section className="py-8 bg-white/50">
-        <div className="container mx-auto px-4">
+      <section className="py-8 relative">
+        {/* Gradient overlay at the top to blend */}
+        <div
+          className="absolute top-0 left-0 right-0 h-32 pointer-events-none -mt-1"
+          style={{
+            background: `linear-gradient(to bottom, ${backgroundColor}, transparent)`,
+          }}
+        ></div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Nos Produits</h2>
           </div>
