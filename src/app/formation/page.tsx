@@ -21,9 +21,11 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/CartContext";
+import type { Formation } from "@/types";
 
 // Training programs data
-const trainingPrograms = [
+const trainingPrograms: Formation[] = [
   {
     id: 1,
     title: "Agriculture Biologique Moderne",
@@ -33,7 +35,7 @@ const trainingPrograms = [
     duration: "3 mois",
     level: "Débutant",
     participants: "15-20",
-    price: "150,000 FCFA",
+    price: 150000,
     category: "Agriculture",
     modules: [
       "Principes de l'agriculture biologique",
@@ -52,7 +54,7 @@ const trainingPrograms = [
     duration: "2 mois",
     level: "Débutant",
     participants: "15-20",
-    price: "100,000 FCFA",
+    price: 100000,
     category: "Agriculture",
     modules: [
       "Sélection et préparation des semences",
@@ -71,7 +73,7 @@ const trainingPrograms = [
     duration: "4 mois",
     level: "Intermédiaire",
     participants: "10-15",
-    price: "200,000 FCFA",
+    price: 200000,
     category: "Gestion",
     modules: [
       "Planification financière agricole",
@@ -90,7 +92,7 @@ const trainingPrograms = [
     duration: "2 mois",
     level: "Avancé",
     participants: "10-15",
-    price: "250,000 FCFA",
+    price: 250000,
     category: "Technologie",
     modules: [
       "Agriculture de précision",
@@ -109,7 +111,7 @@ const trainingPrograms = [
     duration: "3 mois",
     level: "Intermédiaire",
     participants: "12-18",
-    price: "175,000 FCFA",
+    price: 175000,
     category: "Agriculture",
     modules: [
       "Sélection variétale",
@@ -128,7 +130,7 @@ const trainingPrograms = [
     duration: "3 mois",
     level: "Débutant",
     participants: "15-20",
-    price: "120,000 FCFA",
+    price: 120000,
     category: "Gestion",
     modules: [
       "Élaboration de business plan",
@@ -198,10 +200,9 @@ const processSteps = [
 
 export default function FormationPage() {
   const router = useRouter();
+  const { addToCart } = useCart();
   const [activeCategory, setActiveCategory] = useState("Tout");
-  const [modalProgram, setModalProgram] = useState<
-    (typeof trainingPrograms)[0] | null
-  >(null);
+  const [modalProgram, setModalProgram] = useState<Formation | null>(null);
   const [backgroundColor, setBackgroundColor] = useState("#faf9f6");
 
   // Get the actual background color from the body element
@@ -211,19 +212,11 @@ export default function FormationPage() {
     setBackgroundColor(bodyBg);
   }, []);
 
-  const handleEnroll = (programId: number) => {
-    // Navigate to contact page with program info in query params
-    const program = trainingPrograms.find((p) => p.id === programId);
-    if (program) {
-      router.push(
-        `/contact?subject=training&program=${encodeURIComponent(program.title)}`
-      );
-    } else {
-      router.push("/contact?subject=training");
-    }
+  const handleEnroll = (program: Formation) => {
+    addToCart(program);
   };
 
-  const openModal = (program: (typeof trainingPrograms)[0]) => {
+  const openModal = (program: Formation) => {
     setModalProgram(program);
   };
 
@@ -232,7 +225,7 @@ export default function FormationPage() {
   };
 
   // Filter programs
-  const filteredPrograms = trainingPrograms.filter((program) => {
+  const filteredPrograms = trainingPrograms.filter((program: Formation) => {
     return activeCategory === "Tout" || program.category === activeCategory;
   });
 
@@ -329,7 +322,7 @@ export default function FormationPage() {
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 1200 120"
             preserveAspectRatio="none"
-            className="relative block w-[calc(100%+1.3px)] h-[60px]"
+            className="relative block w-[calc(100%+1.3px)] h-15"
           >
             <path
               d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
@@ -491,7 +484,9 @@ export default function FormationPage() {
                         <span className="text-xs">{program.participants}</span>
                       </div>
                       <div className="flex items-center gap-1 font-semibold text-green-600">
-                        <span className="text-xs">{program.price}</span>
+                        <span className="text-xs">
+                          {program.price.toLocaleString()} FCFA
+                        </span>
                       </div>
                     </div>
 
@@ -512,7 +507,7 @@ export default function FormationPage() {
                         <Button
                           size="sm"
                           className="flex-1 bg-green-600 hover:bg-green-700 text-white shrink-0"
-                          onClick={() => handleEnroll(program.id)}
+                          onClick={() => handleEnroll(program)}
                         >
                           S&apos;inscrire
                           <ArrowRight className="w-4 h-4 ml-1" />
@@ -666,8 +661,8 @@ export default function FormationPage() {
                     <div className="text-center">
                       <Award className="w-5 h-5 text-green-600 mx-auto mb-2" />
                       <p className="text-xs text-gray-500 mb-1">Prix</p>
-                      <p className="font-semibold text-green-600">
-                        {modalProgram.price}
+                      <p className="font-semibold text-gray-900">
+                        {modalProgram.price.toLocaleString()} FCFA
                       </p>
                     </div>
                   </div>
@@ -712,7 +707,7 @@ export default function FormationPage() {
                     </Button>
                     <Button
                       onClick={() => {
-                        handleEnroll(modalProgram.id);
+                        handleEnroll(modalProgram);
                         closeModal();
                       }}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white"
@@ -730,4 +725,3 @@ export default function FormationPage() {
     </div>
   );
 }
-

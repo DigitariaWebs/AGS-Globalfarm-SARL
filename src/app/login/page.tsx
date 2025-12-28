@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, Mail, Eye, EyeOff, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,18 +31,17 @@ export default function LoginPage() {
     setError("");
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // For demo purposes, accept any email/password
-      // In production, this would call your authentication API
-      if (formData.email && formData.password) {
-        // Success - redirect to home or dashboard
-        router.push("/");
-      } else {
-        setError("Veuillez remplir tous les champs");
-      }
+    try {
+      await authClient.signIn.email({
+        email: formData.email,
+        password: formData.password,
+      });
+      router.push("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur de connexion");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -211,4 +211,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

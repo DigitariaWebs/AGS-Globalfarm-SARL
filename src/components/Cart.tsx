@@ -82,7 +82,8 @@ export default function Cart() {
                     Votre panier est vide
                   </h3>
                   <p className="text-gray-600 mb-8 max-w-xs mx-auto">
-                    Ajoutez des produits frais et biologiques à votre panier
+                    Ajoutez des produits frais et biologiques ou des formations
+                    à votre panier
                   </p>
                   <Link href="/boutique" onClick={() => setIsCartOpen(false)}>
                     <Button className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 text-base font-semibold shadow-md hover:shadow-lg transition-all">
@@ -104,14 +105,14 @@ export default function Cart() {
                         <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-green-50 shrink-0 border border-gray-100">
                           <Image
                             src={item.image}
-                            alt={item.name}
+                            alt={"name" in item ? item.name : item.title}
                             fill
                             className="object-cover"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-gray-900 mb-1.5 text-sm line-clamp-2">
-                            {item.name}
+                            {"name" in item ? item.name : item.title}
                           </h3>
                           <p className="text-base font-bold text-green-600 mb-3">
                             {item.price.toLocaleString()} FCFA
@@ -178,15 +179,17 @@ export default function Cart() {
                       {cartTotal.toLocaleString()} FCFA
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-gray-700">
-                    <span className="text-sm font-medium">Livraison</span>
-                    <span className="text-green-600 font-bold text-base flex items-center gap-1">
-                      <span className="text-xs line-through text-gray-400">
-                        2000 FCFA
+                  {cart.some((item) => "name" in item) && (
+                    <div className="flex justify-between items-center text-gray-700">
+                      <span className="text-sm font-medium">Livraison</span>
+                      <span className="text-green-600 font-bold text-base flex items-center gap-1">
+                        <span className="text-xs line-through text-gray-400">
+                          2000 FCFA
+                        </span>
+                        Gratuite
                       </span>
-                      Gratuite
-                    </span>
-                  </div>
+                    </div>
+                  )}
                   <div className="h-px bg-gray-200 my-2" />
                   <div className="flex justify-between items-center pt-2">
                     <span className="text-lg font-bold text-gray-900">
@@ -205,10 +208,12 @@ export default function Cart() {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <Truck className="w-4 h-4 text-green-600" />
-                    <span>Livraison gratuite</span>
-                  </div>
+                  {cart.some((item) => "name" in item) && (
+                    <div className="flex items-center gap-1">
+                      <Truck className="w-4 h-4 text-green-600" />
+                      <span>Livraison gratuite</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-1">
                     <ShieldCheck className="w-4 h-4 text-green-600" />
                     <span>Paiement sécurisé</span>
@@ -222,4 +227,3 @@ export default function Cart() {
     </AnimatePresence>
   );
 }
-

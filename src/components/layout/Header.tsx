@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, Sparkles, User, ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const MotionLink = motion.create(Link);
 
@@ -27,21 +35,25 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function Header() {
   const pathname = usePathname();
-  // Mocking auth/modal for now to match visual style without crashing
-  const user = null;
-  const isLoading = false;
+  const router = useRouter();
+  const { user, isLoading, logout } = useAuth();
   const openModal = (type: string) => {
     if (type === "auth") {
-      window.location.href = "/login";
+      router.push("/login");
     }
   };
-  const logout = () => console.log("Logout");
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = React.useState(false);
 
   // Cart context - use hook (will work since CartProvider wraps the app)
   const { cartItemCount, setIsCartOpen } = useCart();
+
+  // Get user initials
+  const initials =
+    user?.firstName && user?.lastName
+      ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+      : "U";
 
   const isActive = (href: string): boolean => {
     if (href === "/") {
@@ -128,23 +140,25 @@ export default function Header() {
               {isLoading ? (
                 <div className="w-32 h-8 bg-gray-200 rounded-full animate-pulse"></div>
               ) : user ? (
-                <button
-                  onClick={logout}
-                  className="inline-flex items-center justify-center rounded-full px-6 py-2 text-white text-sm font-semibold shadow-sm focus:outline-none focus-visible:ring-2 transition-all duration-200 hover:shadow-md whitespace-nowrap"
-                  style={{
-                    backgroundColor: "var(--color-cta)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "var(--color-cta-hover)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "var(--color-cta)";
-                  }}
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Déconnexion
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="focus:outline-none">
+                      <Avatar>
+                        <AvatarImage
+                          src={user.image || undefined}
+                          alt={user.name || "User"}
+                        />
+                        <AvatarFallback>{initials}</AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={logout}>
+                      <User className="w-4 h-4 mr-2" />
+                      Déconnexion
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <button
                   onClick={() => openModal("auth")}
@@ -292,27 +306,30 @@ export default function Header() {
                   {isLoading ? (
                     <div className="w-full h-10 bg-gray-200 rounded-full animate-pulse"></div>
                   ) : user ? (
-                    <button
-                      onClick={() => {
-                        setMobileOpen(false);
-                        logout();
-                      }}
-                      className="w-full inline-flex items-center justify-center rounded-full px-4 py-2 text-white text-sm font-semibold shadow-sm transition-all duration-200 hover:shadow-md"
-                      style={{
-                        backgroundColor: "var(--color-cta)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "var(--color-cta-hover)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "var(--color-cta)";
-                      }}
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Déconnexion
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="w-full flex items-center justify-center p-2 focus:outline-none">
+                          <Avatar>
+                            <AvatarImage
+                              src={user.image || undefined}
+                              alt={user.name || "User"}
+                            />
+                            <AvatarFallback>{initials}</AvatarFallback>
+                          </Avatar>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="center" className="w-48">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setMobileOpen(false);
+                            logout();
+                          }}
+                        >
+                          <User className="w-4 h-4 mr-2" />
+                          Déconnexion
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : (
                     <button
                       onClick={() => {

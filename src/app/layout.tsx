@@ -4,6 +4,7 @@ import "./globals.css";
 import ConditionalLayout from "@/components/layout/ConditionalLayout";
 import Cart from "@/components/Cart";
 import { CartProvider } from "@/contexts/CartContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,7 +18,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AGS Global Farm SARL - Agriculture Durable & Innovante",
-  description: "Solutions agricoles innovantes pour des récoltes abondantes et un avenir durable",
+  description:
+    "Solutions agricoles innovantes pour des récoltes abondantes et un avenir durable",
 };
 
 export default function RootLayout({
@@ -30,10 +32,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <CartProvider>
-          <ConditionalLayout>{children}</ConditionalLayout>
-          <Cart />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <ConditionalLayout>{children}</ConditionalLayout>
+            <Cart />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
