@@ -10,10 +10,27 @@ export type Product = {
   organic: boolean;
   rating: number;
   reviews: number;
-  isNew?: boolean;
+  isNewProduct?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Lesson = {
+  id: number;
+  title: string;
+  content?: string;
+  duration?: string;
+};
+
+export type Section = {
+  id: number;
+  title: string;
+  description?: string;
+  lessons: Lesson[];
 };
 
 export type Formation = {
+  _id?: string;
   id: number;
   title: string;
   description: string;
@@ -21,10 +38,22 @@ export type Formation = {
   duration: string;
   level: string;
   participants: string;
-  price: number; // Parsed to number
+  price: number;
   category: string;
-  modules: string[];
-  icon: any; // Icon component
+  sections: {
+    id: number;
+    title: string;
+    description?: string;
+    lessons: {
+      id: number;
+      title: string;
+      content?: string;
+      duration?: string;
+    }[];
+  }[];
+  icon: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type CartItem = (Product | Formation) & { quantity: number };

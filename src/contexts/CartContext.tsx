@@ -40,6 +40,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart((prevCart) => {
       const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
       if (existingItem) {
+        // For formations, don't increase quantity since they are enrollments
+        if ("title" in item) {
+          return prevCart;
+        }
         return prevCart.map((cartItem) =>
           cartItem.id === item.id
             ? { ...cartItem, quantity: cartItem.quantity + 1 }

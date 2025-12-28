@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { ArrowRight, Truck, ShieldCheck } from "lucide-react";
+import { ArrowRight, Truck, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,54 @@ export default function CheckoutPage() {
     phone: "",
   });
   const [saveAsDefault, setSaveAsDefault] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState("");
+
+  const handlePayment = async () => {
+    // Validate address form
+    if (
+      !addressForm.street ||
+      !addressForm.city ||
+      !addressForm.country ||
+      !addressForm.phone
+    ) {
+      setError("Veuillez remplir toutes les informations de livraison.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/payment/initiate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cart,
+          user,
+          address: addressForm,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Erreur lors de l'initialisation du paiement",
+        );
+      }
+
+      // Redirect to Paydunya payment page
+      window.location.href = data.paymentUrl;
+    } catch (err) {
+      console.error("Payment error:", err);
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -88,9 +136,11 @@ export default function CheckoutPage() {
                           {item.price.toLocaleString()} FCFA
                         </p>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">
-                            Quantité: {item.quantity}
-                          </span>
+                          {"name" in item && (
+                            <span className="text-sm text-gray-600">
+                              Quantité: {item.quantity}
+                            </span>
+                          )}
                         </div>
                         {/* Subtotal */}
                         <div className="mt-3 pt-3 border-t border-gray-100">
@@ -276,9 +326,22 @@ export default function CheckoutPage() {
 
             {/* Payment Button */}
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
-                <ArrowRight className="w-5 h-5 mr-2" />
-                Payer maintenant
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-600 text-sm">{error}</p>
+                </div>
+              )}
+              <Button
+                onClick={handlePayment}
+                disabled={isProcessing}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-6 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none"
+              >
+                {isProcessing ? (
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                ) : (
+                  <ArrowRight className="w-5 h-5 mr-2" />
+                )}
+                {isProcessing ? "Traitement..." : "Payer maintenant"}
               </Button>
               <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500">
                 {cart.some((item) => "name" in item) && (

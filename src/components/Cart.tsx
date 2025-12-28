@@ -131,30 +131,32 @@ export default function Cart() {
                             {item.price.toLocaleString()} FCFA
                           </p>
                           <div className="flex items-center justify-between">
-                            {/* Quantity Controls */}
-                            <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity - 1)
-                                }
-                                className="p-1.5 hover:bg-white rounded-md transition-all duration-200 hover:scale-110 active:scale-95"
-                                aria-label="Diminuer la quantité"
-                              >
-                                <Minus className="w-4 h-4 text-gray-700" />
-                              </button>
-                              <span className="w-10 text-center font-bold text-gray-900 text-sm">
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity + 1)
-                                }
-                                className="p-1.5 hover:bg-white rounded-md transition-all duration-200 hover:scale-110 active:scale-95"
-                                aria-label="Augmenter la quantité"
-                              >
-                                <Plus className="w-4 h-4 text-gray-700" />
-                              </button>
-                            </div>
+                            {/* Quantity Controls - Only for products */}
+                            {"name" in item && (
+                              <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
+                                <button
+                                  onClick={() =>
+                                    updateQuantity(item.id, item.quantity - 1)
+                                  }
+                                  className="p-1.5 hover:bg-white rounded-md transition-all duration-200 hover:scale-110 active:scale-95"
+                                  aria-label="Diminuer la quantité"
+                                >
+                                  <Minus className="w-4 h-4 text-gray-700" />
+                                </button>
+                                <span className="w-10 text-center font-bold text-gray-900 text-sm">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    updateQuantity(item.id, item.quantity + 1)
+                                  }
+                                  className="p-1.5 hover:bg-white rounded-md transition-all duration-200 hover:scale-110 active:scale-95"
+                                  aria-label="Augmenter la quantité"
+                                >
+                                  <Plus className="w-4 h-4 text-gray-700" />
+                                </button>
+                              </div>
+                            )}
                             {/* Remove Button */}
                             <button
                               onClick={() => removeFromCart(item.id)}
