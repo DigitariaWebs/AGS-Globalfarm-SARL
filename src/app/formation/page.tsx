@@ -1,7 +1,7 @@
 import { getFormations } from "@/lib/db";
 import FormationClientPage from "./FormationClientPage";
 
-const categories = ["Tout", "Agriculture"];
+const categories = ["Tout", "Agriculture", "Présentiel"];
 
 const benefits = [
   {

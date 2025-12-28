@@ -15,6 +15,58 @@ export type Product = {
   updatedAt: Date;
 };
 
+export type PaydunyaCartItem = {
+  quantity: number;
+  price: number;
+  _id?: string;
+  id?: number;
+  title?: string;
+  name?: string;
+  category?: string;
+} & Record<string, unknown>;
+
+export interface PaydunyaInvoice {
+  token?: string;
+  total_amount: number;
+  description?: string;
+}
+
+export interface PaydunyaActions {
+  cancel_url?: string;
+  return_url?: string;
+  callback_url?: string;
+}
+
+export interface PaydunyaCustomer {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface PaydunyaCustomData {
+  userId: string;
+  cart: any[];
+  address?: Address;
+}
+
+export interface PaydunyaCallbackData {
+  response_code?: string;
+  response_text?: string;
+  hash: string;
+  invoice: PaydunyaInvoice;
+  custom_data: PaydunyaCustomData;
+  actions?: PaydunyaActions;
+  mode?: string;
+  status: string;
+  customer?: PaydunyaCustomer;
+  receipt_url?: string;
+  fail_reason?: string;
+  errors?: {
+    message?: string;
+    description?: string;
+  };
+}
+
 export type Lesson = {
   id: number;
   title: string;
@@ -29,18 +81,40 @@ export type Section = {
   lessons: Lesson[];
 };
 
+export type TimeFrame = {
+  from: string;
+  to: string;
+  name: string;
+  description: string;
+};
+
+export type Day = {
+  name: string;
+  timeFrames: TimeFrame[];
+};
+
+export type FormationSession = {
+  id: number;
+  startDate: Date;
+  endDate: Date;
+  location: string;
+  availableSpots: number;
+  status: "open" | "ongoing" | "done";
+};
+
 export type Formation = {
   _id?: string;
   id: number;
   title: string;
   description: string;
   image: string;
-  duration: string;
+  durationDays: number;
   level: string;
   participants: string;
   price: number;
   category: string;
-  sections: {
+  type: "online" | "presentiel";
+  sections?: {
     id: number;
     title: string;
     description?: string;
@@ -51,6 +125,11 @@ export type Formation = {
       duration?: string;
     }[];
   }[];
+  program?: Day[];
+  sessions?: FormationSession[];
+  address?: string;
+  contactPhone?: string;
+  contactEmail?: string;
   icon: string;
   createdAt: Date;
   updatedAt: Date;
@@ -104,4 +183,18 @@ export type Session = {
     ipAddress?: string;
     userAgent?: string;
   };
+};
+
+export type OrderItem = CartItem & { sessionId?: number };
+
+export type Order = {
+  _id?: string;
+  userId: string;
+  items: OrderItem[];
+  totalAmount: number;
+  paymentStatus: "paid" | "pending" | "failed";
+  paymentMethod?: string;
+  address?: Address;
+  createdAt: Date;
+  updatedAt: Date;
 };

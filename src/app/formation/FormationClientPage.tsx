@@ -15,6 +15,10 @@ import {
   ArrowRight,
   Leaf,
   X,
+  MapPin,
+  Calendar,
+  Play,
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
@@ -31,6 +35,10 @@ const iconMap = {
   ArrowRight,
   Leaf,
   X,
+  MapPin,
+  Calendar,
+  Play,
+  CheckCircle,
 };
 
 type Benefit = {
@@ -72,6 +80,16 @@ export default function FormationClientPage({
   }, []);
 
   const handleEnroll = (program: Formation) => {
+    // Check if there's an open session for presentiel formations
+    if (program.type === "presentiel") {
+      const hasOpenSession = program.sessions?.some(
+        (session) => session.status === "open",
+      );
+      if (!hasOpenSession) {
+        alert("Aucune session ouverte pour cette formation.");
+        return;
+      }
+    }
     addToCart(program);
   };
 
@@ -85,7 +103,9 @@ export default function FormationClientPage({
 
   // Filter programs
   const filteredPrograms = trainingPrograms.filter((program: Formation) => {
-    return activeCategory === "Tout" || program.category === activeCategory;
+    if (activeCategory === "Tout") return true;
+    if (activeCategory === "Présentiel") return program.type === "presentiel";
+    return program.category === activeCategory;
   });
 
   return (
@@ -341,16 +361,39 @@ export default function FormationClientPage({
 
                       {/* Meta Info */}
                       <div className="grid grid-cols-3 gap-2 mb-3 text-xs text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4 text-green-600 shrink-0" />
-                          <span className="text-xs">{program.duration}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <BookOpen className="w-4 h-4 text-green-600 shrink-0" />
-                          <span className="text-xs">
-                            {program.sections.length} sections
-                          </span>
-                        </div>
+                        {program.type === "online" ? (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4 text-green-600 shrink-0" />
+                              <span className="text-xs">
+                                {program.durationDays} jours
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <BookOpen className="w-4 h-4 text-green-600 shrink-0" />
+                              <span className="text-xs">
+                                {program.sections?.length || 0} sections
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4 text-green-600 shrink-0" />
+                              <span className="text-xs">
+                                {program.sessions?.[0]?.startDate
+                                  ? new Date(
+                                      program.sessions[0].startDate,
+                                    ).toLocaleDateString()
+                                  : ""}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4 text-green-600 shrink-0" />
+                              <span className="text-xs">{program.address}</span>
+                            </div>
+                          </>
+                        )}
                         <div className="flex items-center gap-1 font-semibold text-green-600">
                           <span className="text-xs">
                             {program.price.toLocaleString()} FCFA
@@ -374,11 +417,34 @@ export default function FormationClientPage({
                           </Button>
                           <Button
                             size="sm"
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white shrink-0"
+                            className={`flex-1 shrink-0 ${
+                              program.type === "presentiel" &&
+                              !program.sessions?.some(
+                                (session) => session.status === "open",
+                              )
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-green-600 hover:bg-green-700"
+                            } text-white`}
+                            disabled={
+                              program.type === "presentiel" &&
+                              !program.sessions?.some(
+                                (session) => session.status === "open",
+                              )
+                            }
                             onClick={() => handleEnroll(program)}
                           >
-                            S&apos;inscrire
-                            <ArrowRight className="w-4 h-4 ml-1" />
+                            {program.type === "presentiel" &&
+                            !program.sessions?.some(
+                              (session) => session.status === "open",
+                            )
+                              ? "Fermé"
+                              : "S'inscrire"}
+                            {program.type !== "presentiel" ||
+                            program.sessions?.some(
+                              (session) => session.status === "open",
+                            ) ? (
+                              <ArrowRight className="w-4 h-4 ml-1" />
+                            ) : null}
                           </Button>
                         </div>
                       </div>
@@ -517,97 +583,337 @@ export default function FormationClientPage({
                   </p>
 
                   {/* Program Info Grid */}
-                  <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
-                    <div className="text-center">
-                      <Clock className="w-5 h-5 text-green-600 mx-auto mb-2" />
-                      <p className="text-xs text-gray-500 mb-1">Durée</p>
-                      <p className="font-semibold text-gray-900">
-                        {modalProgram.duration}
+                  <div className="grid grid-cols-4 gap-3 mb-6 p-6 bg-linear-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-100">
+                    {modalProgram.type === "online" ? (
+                      <>
+                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
+                          <Clock className="w-6 h-6 text-green-600 mx-auto mb-3" />
+                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                            Durée
+                          </p>
+                          <p className="font-bold text-gray-900 text-lg">
+                            {modalProgram.durationDays} jours
+                          </p>
+                        </div>
+                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
+                          <BookOpen className="w-6 h-6 text-green-600 mx-auto mb-3" />
+                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                            Sections
+                          </p>
+                          <p className="font-bold text-gray-900 text-lg">
+                            {modalProgram.sections?.length || 0}
+                          </p>
+                        </div>
+                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
+                          <Users className="w-6 h-6 text-green-600 mx-auto mb-3" />
+                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                            Participants
+                          </p>
+                          <p className="font-bold text-gray-900 text-lg">
+                            {modalProgram.participants}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
+                          <Calendar className="w-6 h-6 text-green-600 mx-auto mb-3" />
+                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                            Dates
+                          </p>
+                          <p className="font-bold text-gray-900 text-sm leading-tight">
+                            {modalProgram.sessions?.[0]?.startDate
+                              ? new Date(
+                                  modalProgram.sessions[0].startDate,
+                                ).toLocaleDateString()
+                              : ""}{" "}
+                            -{" "}
+                            {modalProgram.sessions?.[0]?.endDate
+                              ? new Date(
+                                  modalProgram.sessions[0].endDate,
+                                ).toLocaleDateString()
+                              : ""}
+                          </p>
+                        </div>
+                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
+                          <MapPin className="w-6 h-6 text-green-600 mx-auto mb-3" />
+                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                            Lieu
+                          </p>
+                          <p className="font-bold text-gray-900 text-sm leading-tight">
+                            {modalProgram.address}
+                          </p>
+                        </div>
+                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
+                          <Users className="w-6 h-6 text-green-600 mx-auto mb-3" />
+                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                            Places
+                          </p>
+                          <p className="font-bold text-gray-900 text-lg">
+                            {modalProgram.sessions?.[0]?.availableSpots || 0}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
+                      <Award className="w-6 h-6 text-green-600 mx-auto mb-3" />
+                      <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                        Prix
                       </p>
-                    </div>
-                    <div className="text-center">
-                      <BookOpen className="w-5 h-5 text-green-600 mx-auto mb-2" />
-                      <p className="text-xs text-gray-500 mb-1">Sections</p>
-                      <p className="font-semibold text-gray-900">
-                        {modalProgram.sections.length}
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <Award className="w-5 h-5 text-green-600 mx-auto mb-2" />
-                      <p className="text-xs text-gray-500 mb-1">Prix</p>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-bold text-green-600 text-lg">
                         {modalProgram.price.toLocaleString()} FCFA
                       </p>
                     </div>
                   </div>
 
-                  {/* Sections and Lessons */}
+                  {/* Program Structure */}
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
-                      Structure de la Formation
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      Cette formation comprend {modalProgram.sections.length}{" "}
-                      sections pour un total de{" "}
-                      {modalProgram.sections.reduce(
-                        (sum, s) => sum + s.lessons.length,
-                        0,
-                      )}{" "}
-                      leçons.
-                    </p>
+                    {modalProgram.type === "online" ? (
+                      <>
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">
+                          Structure de la Formation
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                          Cette formation comprend{" "}
+                          {modalProgram.sections?.length || 0} sections pour un
+                          total de{" "}
+                          {modalProgram.sections?.reduce(
+                            (sum, s) => sum + s.lessons.length,
+                            0,
+                          ) || 0}{" "}
+                          leçons.
+                        </p>
 
-                    <div className="space-y-3">
-                      {modalProgram.sections.map((section, sIdx) => (
-                        <div
-                          key={section.id}
-                          className="p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-gray-900">
-                              {section.title}
-                            </h4>
-                            <span className="text-xs text-gray-500">
-                              {section.lessons.length} leçons
-                            </span>
-                          </div>
-                          {sIdx === 0 && (
-                            <ul className="grid gap-2">
-                              {section.lessons.map((lesson) => (
-                                <li
-                                  key={lesson.id}
-                                  className="p-2 bg-white rounded-md border border-gray-100 text-sm text-gray-700"
-                                >
-                                  {lesson.title}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                        <div className="space-y-3">
+                          {modalProgram.sections?.map((section, sIdx) => (
+                            <div
+                              key={section.id}
+                              className="p-3 bg-gray-50 rounded-lg"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-semibold text-gray-900">
+                                  {section.title}
+                                </h4>
+                                <span className="text-xs text-gray-500">
+                                  {section.lessons.length} leçons
+                                </span>
+                              </div>
+                              {sIdx === 0 && (
+                                <ul className="grid gap-2">
+                                  {section.lessons.map((lesson) => (
+                                    <li
+                                      key={lesson.id}
+                                      className="p-2 bg-white rounded-md border border-gray-100 text-sm text-gray-700"
+                                    >
+                                      {lesson.title}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                          <Calendar className="w-5 h-5 text-green-600" />
+                          Programme de la Formation
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                          Formation présentielle de {modalProgram.durationDays}{" "}
+                          jours avec {modalProgram.sessions?.length || 0}{" "}
+                          session(s) disponible(s).
+                        </p>
+
+                        {/* Formation Program */}
+                        {modalProgram.program && (
+                          <div className="mb-6">
+                            <div className="space-y-3">
+                              {modalProgram.program.map((day, dayIdx) => (
+                                <div
+                                  key={dayIdx}
+                                  className="bg-gray-50 rounded-lg p-4 border-l-4 border-green-500"
+                                >
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
+                                      <span className="text-white text-xs font-bold">
+                                        {dayIdx + 1}
+                                      </span>
+                                    </div>
+                                    <h5 className="font-semibold text-gray-900">
+                                      {day.name}
+                                    </h5>
+                                  </div>
+
+                                  <div className="space-y-2 ml-8">
+                                    {day.timeFrames.map((timeFrame, tfIdx) => (
+                                      <div
+                                        key={tfIdx}
+                                        className="flex items-start gap-3 p-2 bg-white rounded-md border border-gray-100 hover:shadow-sm transition-shadow"
+                                      >
+                                        <div className="shrink-0 mt-0.5">
+                                          <Clock className="w-4 h-4 text-green-600" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-sm font-medium text-gray-900">
+                                              {timeFrame.from} - {timeFrame.to}
+                                            </span>
+                                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                                              {timeFrame.name}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm text-gray-600">
+                                            {timeFrame.description}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Sessions */}
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-gray-900 mb-3">
+                            Sessions Disponibles
+                          </h4>
+                          {modalProgram.sessions?.map((session) => (
+                            <div
+                              key={session.id}
+                              className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
+                            >
+                              {/* Session Header */}
+                              <div className="bg-linear-to-r from-green-50 to-emerald-50 px-4 py-3 border-b border-gray-200">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                                      <span className="text-white text-sm font-bold">
+                                        {session.id}
+                                      </span>
+                                    </div>
+                                    <h4 className="font-semibold text-gray-900">
+                                      Session {session.id}
+                                    </h4>
+                                    <span
+                                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                        session.status === "open"
+                                          ? "bg-green-100 text-green-800"
+                                          : session.status === "ongoing"
+                                            ? "bg-yellow-100 text-yellow-800"
+                                            : "bg-gray-100 text-gray-800"
+                                      }`}
+                                    >
+                                      {session.status === "open"
+                                        ? "Ouvert"
+                                        : session.status === "ongoing"
+                                          ? "En cours"
+                                          : "Terminé"}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>
+                                      {session.startDate
+                                        ? new Date(
+                                            session.startDate,
+                                          ).toLocaleDateString()
+                                        : ""}{" "}
+                                      -{" "}
+                                      {session.endDate
+                                        ? new Date(
+                                            session.endDate,
+                                          ).toLocaleDateString()
+                                        : ""}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 mt-1 text-sm text-gray-600 px-4 pb-3">
+                                  <MapPin className="w-4 h-4" />
+                                  <span>{session.location}</span>
+                                  <span className="ml-4">
+                                    {session.availableSpots} places disponibles
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 {/* Modal Footer */}
-                <div className="border-t p-6 bg-gray-50">
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={closeModal}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      Fermer
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        handleEnroll(modalProgram);
-                        closeModal();
-                      }}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      S&apos;inscrire Maintenant
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
+                <div className="border-t bg-linear-to-r from-gray-50 to-green-50">
+                  {modalProgram.type === "presentiel" && (
+                    <div className="px-6 pt-4 pb-2">
+                      <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Phone className="w-4 h-4 text-green-600" />
+                          <span className="font-medium">
+                            {modalProgram.contactPhone}
+                          </span>
+                        </div>
+                        <div className="w-px h-4 bg-gray-300"></div>
+                        <div className="flex items-center gap-1">
+                          <Award className="w-4 h-4 text-green-600" />
+                          <span>{modalProgram.contactEmail}</span>
+                        </div>
+                      </div>
+                      <p className="text-center text-xs text-gray-500 mt-2">
+                        Contactez-nous pour plus d&apos;informations ou pour
+                        vous inscrire
+                      </p>
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={closeModal}
+                        variant="outline"
+                        className="flex-1 border-gray-300 hover:bg-gray-50"
+                      >
+                        Fermer
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          handleEnroll(modalProgram);
+                          closeModal();
+                        }}
+                        disabled={
+                          modalProgram.type === "presentiel" &&
+                          !modalProgram.sessions?.some(
+                            (session) => session.status === "open",
+                          )
+                        }
+                        className={`flex-1 shadow-lg hover:shadow-xl transition-all ${
+                          modalProgram.type === "presentiel" &&
+                          !modalProgram.sessions?.some(
+                            (session) => session.status === "open",
+                          )
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                        }`}
+                      >
+                        {modalProgram.type === "presentiel" &&
+                        !modalProgram.sessions?.some(
+                          (session) => session.status === "open",
+                        )
+                          ? "Aucune Session Ouverte"
+                          : "S'inscrire Maintenant"}
+                        {modalProgram.type !== "presentiel" ||
+                        modalProgram.sessions?.some(
+                          (session) => session.status === "open",
+                        ) ? (
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        ) : null}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </motion.div>

@@ -4,8 +4,16 @@ import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useCart } from "@/contexts/CartContext";
+import { useEffect } from "react";
 
 export default function PaymentSuccessPage() {
+  const { clearCart } = useCart();
+
+  useEffect(() => {
+    clearCart();
+  }, [clearCart]);
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <motion.div
@@ -40,7 +48,7 @@ export default function PaymentSuccessPage() {
             </Button>
           </Link>
 
-          <Link href="/profile/orders">
+          <Link href="/orders">
             <Button variant="outline" className="w-full">
               Voir mes commandes
             </Button>

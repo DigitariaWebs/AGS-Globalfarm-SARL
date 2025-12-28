@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import type { Product, Formation, CartItem } from "@/types";
@@ -16,6 +17,7 @@ type CartContextType = {
   addToCart: (item: Product | Formation) => void;
   removeFromCart: (itemId: number) => void;
   updateQuantity: (itemId: number, newQuantity: number) => void;
+  clearCart: () => void;
   cartItemCount: number;
   cartTotal: number;
 };
@@ -71,6 +73,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const clearCart = useCallback(() => {
+    setCart([]);
+  }, []);
+
   const cartItemCount = cart.reduce((count, item) => count + item.quantity, 0);
   const cartTotal = cart.reduce(
     (total, item) => total + item.price * item.quantity,
@@ -86,6 +92,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        clearCart,
         cartItemCount,
         cartTotal,
       }}

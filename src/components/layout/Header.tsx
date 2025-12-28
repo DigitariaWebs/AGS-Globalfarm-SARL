@@ -153,6 +153,12 @@ export default function Header() {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link href="/orders">
+                        <ShoppingBag className="w-4 h-4 mr-2" />
+                        Mes Commandes
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={logout}>
                       <User className="w-4 h-4 mr-2" />
                       Déconnexion
@@ -319,6 +325,24 @@ export default function Header() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="center" className="w-48">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setMobileOpen(false);
+                            router.push("/orders");
+                          }}
+                        >
+                          <User className="w-4 h-4 mr-2" />
+                          Profil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setMobileOpen(false);
+                            router.push("/orders");
+                          }}
+                        >
+                          <ShoppingBag className="w-4 h-4 mr-2" />
+                          Mes Commandes
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {
                             setMobileOpen(false);
