@@ -69,9 +69,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
-        roboto: ['Roboto', 'sans-serif'],
-        vibes: ['"Great Vibes"', 'cursive'],
+        jakarta: ['"Plus Jakarta Sans"', "sans-serif"],
+        roboto: ["Roboto", "sans-serif"],
+        vibes: ['"Great Vibes"', "cursive"],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -102,4 +102,3 @@ const config: Config = {
 };
 
 export default config;
-

@@ -64,7 +64,8 @@ export default function HeroSection() {
       const items: { src: string; alt: string; heightClass: string }[] = [];
       for (let j = 0; j < col.count; j++) {
         const img = images[i % images.length];
-        const heightClass = col.heights[j] ?? col.heights[col.heights.length - 1];
+        const heightClass =
+          col.heights[j] ?? col.heights[col.heights.length - 1];
         items.push({ src: img.src, alt: img.alt, heightClass });
         i++;
       }
@@ -85,7 +86,10 @@ export default function HeroSection() {
       alt: item.alt,
       heightClass: isPair
         ? leftHeights[leftHeights.length - 1 - itemIdx]
-        : (rightStructure[colIdx].heights[itemIdx] ?? rightStructure[colIdx].heights[rightStructure[colIdx].heights.length - 1]),
+        : (rightStructure[colIdx].heights[itemIdx] ??
+          rightStructure[colIdx].heights[
+            rightStructure[colIdx].heights.length - 1
+          ]),
     }));
   });
 
@@ -231,4 +235,3 @@ export default function HeroSection() {
     </section>
   );
 }
-

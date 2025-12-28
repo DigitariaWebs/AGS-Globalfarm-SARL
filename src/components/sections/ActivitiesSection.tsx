@@ -59,11 +59,14 @@ export default function ActivitiesSection() {
               className="text-[32px] sm:text-[40px] lg:text-[48px] font-bold leading-tight lg:leading-[61px] mb-6"
               style={{ color: "var(--color-brand, #16a34a)" }}
             >
-              L&apos;agriculture de demain, partout où l&apos;innovation prend racine
+              L&apos;agriculture de demain, partout où l&apos;innovation prend
+              racine
             </h2>
             <p
               className="font-bold text-sm py-2 rounded-[18px] transition-colors mb-12"
-              style={{ color: "var(--color-muted, hsl(var(--muted-foreground)))" }}
+              style={{
+                color: "var(--color-muted, hsl(var(--muted-foreground)))",
+              }}
             >
               Des solutions qui transforment votre passion en réussite agricole
             </p>
@@ -99,7 +102,9 @@ export default function ActivitiesSection() {
                   </p>
                   <h3
                     className="text-[26px] font-bold leading-[33px] group-hover:text-primary transition-colors"
-                    style={{ color: "var(--foreground, hsl(var(--foreground)))" }}
+                    style={{
+                      color: "var(--foreground, hsl(var(--foreground)))",
+                    }}
                   >
                     {card.title}
                   </h3>
@@ -138,7 +143,9 @@ export default function ActivitiesSection() {
                   </p>
                   <h3
                     className="text-[26px] font-bold leading-[33px] group-hover:text-primary transition-colors"
-                    style={{ color: "var(--foreground, hsl(var(--foreground)))" }}
+                    style={{
+                      color: "var(--foreground, hsl(var(--foreground)))",
+                    }}
                   >
                     {card.title}
                   </h3>
@@ -151,4 +158,3 @@ export default function ActivitiesSection() {
     </section>
   );
 }
-

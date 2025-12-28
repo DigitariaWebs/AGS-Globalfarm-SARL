@@ -49,13 +49,13 @@ export default function EventsSection() {
 
   const handleReservePlace = (eventTitle: string) => {
     router.push(
-      `/contact?subject=event&event=${encodeURIComponent(eventTitle)}`
+      `/contact?subject=event&event=${encodeURIComponent(eventTitle)}`,
     );
   };
 
   const handleEventClick = (event: (typeof upcomingEvents)[0]) => {
     router.push(
-      `/contact?subject=event&event=${encodeURIComponent(event.title)}`
+      `/contact?subject=event&event=${encodeURIComponent(event.title)}`,
     );
   };
 

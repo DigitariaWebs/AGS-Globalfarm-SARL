@@ -75,7 +75,7 @@ interface ConfirmPaymentResponse {
   custom_data?: PayDunyaCustomData;
   actions?: PayDunyaActions;
   mode: string;
-  status: 'pending' | 'completed' | 'cancelled' | 'failed';
+  status: "pending" | "completed" | "cancelled" | "failed";
   fail_reason?: string;
   customer?: PayDunyaCustomer;
   receipt_url?: string;
@@ -89,50 +89,54 @@ class PayDunyaAPI {
   private masterKey: string;
   private privateKey: string;
   private token: string;
-  private mode: 'test' | 'live';
+  private mode: "test" | "live";
 
   constructor() {
     this.masterKey = process.env.PAYDUNYA_MASTER_KEY!;
     this.privateKey = process.env.PAYDUNYA_PRIVATE_KEY!;
     this.token = process.env.PAYDUNYA_TOKEN!;
-    this.mode = (process.env.PAYDUNYA_MODE || 'test') as 'test' | 'live';
+    this.mode = (process.env.PAYDUNYA_MODE || "test") as "test" | "live";
 
     if (!this.masterKey || !this.privateKey || !this.token) {
-      throw new Error('PayDunya credentials not configured');
+      throw new Error("PayDunya credentials not configured");
     }
   }
 
   private getBaseUrl(): string {
-    return this.mode === 'live'
-      ? 'https://app.paydunya.com/api/v1'
-      : 'https://app.paydunya.com/sandbox-api/v1';
+    return this.mode === "live"
+      ? "https://app.paydunya.com/api/v1"
+      : "https://app.paydunya.com/sandbox-api/v1";
   }
 
   private getHeaders(): Record<string, string> {
     return {
-      'Content-Type': 'application/json',
-      'PAYDUNYA-MASTER-KEY': this.masterKey,
-      'PAYDUNYA-PRIVATE-KEY': this.privateKey,
-      'PAYDUNYA-TOKEN': this.token,
+      "Content-Type": "application/json",
+      "PAYDUNYA-MASTER-KEY": this.masterKey,
+      "PAYDUNYA-PRIVATE-KEY": this.privateKey,
+      "PAYDUNYA-TOKEN": this.token,
     };
   }
 
-  async createInvoice(data: CreateInvoiceRequest): Promise<CreateInvoiceResponse> {
+  async createInvoice(
+    data: CreateInvoiceRequest,
+  ): Promise<CreateInvoiceResponse> {
     const url = `${this.getBaseUrl()}/checkout-invoice/create`;
 
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
-      throw new Error(`PayDunya API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `PayDunya API error: ${response.status} ${response.statusText}`,
+      );
     }
 
     const result: CreateInvoiceResponse = await response.json();
 
-    if (result.response_code !== '00') {
+    if (result.response_code !== "00") {
       throw new Error(`PayDunya error: ${result.response_text}`);
     }
 
@@ -143,17 +147,19 @@ class PayDunyaAPI {
     const url = `${this.getBaseUrl()}/checkout-invoice/confirm/${token}`;
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: this.getHeaders(),
     });
 
     if (!response.ok) {
-      throw new Error(`PayDunya API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `PayDunya API error: ${response.status} ${response.statusText}`,
+      );
     }
 
     const result: ConfirmPaymentResponse = await response.json();
 
-    if (result.response_code !== '00') {
+    if (result.response_code !== "00") {
       throw new Error(`PayDunya error: ${result.response_text}`);
     }
 
