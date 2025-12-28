@@ -156,17 +156,17 @@ function ContactPageContent() {
             subject === "training"
               ? "training"
               : subject === "event"
-              ? "event"
-              : subject;
+                ? "event"
+                : subject;
         }
 
         if (program) {
           updates.message = `Bonjour,\n\nJe souhaite m'inscrire à la formation : ${decodeURIComponent(
-            program
+            program,
           )}\n\nMerci de me contacter pour plus d'informations.\n\nCordialement,`;
         } else if (event) {
           updates.message = `Bonjour,\n\nJe souhaite réserver une place pour l'événement : ${decodeURIComponent(
-            event
+            event,
           )}\n\nMerci de me contacter pour confirmer ma réservation.\n\nCordialement,`;
         }
 
@@ -195,7 +195,7 @@ function ContactPageContent() {
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     setFormData({
       ...formData,
@@ -611,4 +611,3 @@ export default function ContactPage() {
     </Suspense>
   );
 }
-

@@ -14,6 +14,7 @@ type AuthContextType = {
     gender: string,
     email: string,
     password: string,
+    phone?: string,
   ) => Promise<void>;
   logout: () => void;
 };
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     gender: string,
     email: string,
     password: string,
+    phone?: string,
   ): Promise<void> => {
     const result = await (authClient.signUp as any)({
       provider: "email",
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       firstName,
       lastName,
       gender: gender || undefined,
+      phone: phone || undefined,
     });
 
     if (result.error) {

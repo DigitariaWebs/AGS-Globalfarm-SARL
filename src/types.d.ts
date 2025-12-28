@@ -35,8 +35,20 @@ export type UserFormData = {
   lastName: string;
   gender: string;
   email: string;
+  phone?: string;
+  address?: Address;
   password: string;
   confirmPassword: string;
+};
+
+// Address type
+export type Address = {
+  id?: string;
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  isDefault?: boolean;
 };
 
 // Better Auth types
@@ -47,6 +59,8 @@ export type User = {
   firstName: string;
   lastName: string;
   gender?: "male" | "female" | "other";
+  phone?: string;
+  addresses?: Address[];
   image?: string | null;
   emailVerified: boolean;
   createdAt: Date;

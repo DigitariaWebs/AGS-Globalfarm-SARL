@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Lock, Mail, Eye, EyeOff, User, UserPlus } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, User, UserPlus, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -19,6 +19,7 @@ export default function RegisterPage() {
     lastName: "",
     gender: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
   });
@@ -72,6 +73,7 @@ export default function RegisterPage() {
         formData.gender,
         formData.email,
         formData.password,
+        formData.phone || undefined,
       );
       router.push("/");
     } catch (err) {
@@ -210,6 +212,24 @@ export default function RegisterPage() {
                       required
                       className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                       placeholder="votre@email.com"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Téléphone
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-600" />
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                      placeholder="Votre numéro de téléphone"
                     />
                   </div>
                 </div>

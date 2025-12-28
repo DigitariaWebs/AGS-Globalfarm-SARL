@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Lock, Mail, Eye, EyeOff, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -36,7 +38,7 @@ export default function LoginPage() {
         email: formData.email,
         password: formData.password,
       });
-      router.push("/");
+      router.push(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur de connexion");
     } finally {

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   ShoppingBag,
   Plus,
@@ -13,9 +14,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
 export default function Cart() {
+  const router = useRouter();
+  const { user } = useAuth();
   const {
     cart,
     isCartOpen,
@@ -25,6 +29,15 @@ export default function Cart() {
     cartTotal,
     cartItemCount,
   } = useCart();
+
+  const handleOrderNow = () => {
+    setIsCartOpen(false);
+    if (user) {
+      router.push("/checkout");
+    } else {
+      router.push("/login?redirect=/checkout");
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -201,6 +214,7 @@ export default function Cart() {
                   </div>
                 </div>
                 <Button
+                  onClick={handleOrderNow}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                   size="lg"
                 >
