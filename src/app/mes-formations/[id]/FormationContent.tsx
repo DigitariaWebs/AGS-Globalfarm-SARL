@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect, useCallback, startTransition } from "react";
 import { ChevronDown, ChevronRight, Play, CheckCircle } from "lucide-react";
-import type { Formation } from "@/types";
+import ReactPlayer from "react-player";
+import {
+  Dialog,
+  DialogContent,
+  DialogOverlay,
+  DialogTitle,
+} from "@radix-ui/react-dialog";
+import type { Formation, Section, Lesson } from "@/types";
 
 interface FormationContentProps {
   formation: Formation;
@@ -13,19 +20,30 @@ export default function FormationContent({ formation }: FormationContentProps) {
     new Set(),
   );
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
-    new Set(),
+    () => new Set(),
   );
+  const [selectedLesson, setSelectedLesson] = useState<{
+    sectionId: number;
+    lessonId: number;
+    lesson: Lesson;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  useEffect(() => {
-    const savedProgress = localStorage.getItem(
-      `formation-${formation._id}-progress`,
-    );
-    if (savedProgress) {
-      setCompletedLessons(new Set(JSON.parse(savedProgress)));
+  useLayoutEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedProgress = localStorage.getItem(
+        `formation-${formation._id}-progress`,
+      );
+      if (savedProgress) {
+        startTransition(() => {
+          setCompletedLessons(new Set(JSON.parse(savedProgress)));
+        });
+      }
     }
   }, [formation._id]);
 
-  const toggleSection = (sectionId: number) => {
+  const toggleSection = useCallback((sectionId: number) => {
     setExpandedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
@@ -35,25 +53,50 @@ export default function FormationContent({ formation }: FormationContentProps) {
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const markLessonComplete = (lessonId: string) => {
-    setCompletedLessons((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(lessonId)) {
-        newSet.delete(lessonId);
-      } else {
-        newSet.add(lessonId);
-      }
-
-      // Save to localStorage
-      localStorage.setItem(
-        `formation-${formation._id}-progress`,
-        JSON.stringify([...newSet]),
+  const isSectionComplete = useCallback(
+    (section: Section) => {
+      return section.lessons.every((lesson: Lesson) =>
+        completedLessons.has(`${section.id}-${lesson.id}`),
       );
-      return newSet;
-    });
-  };
+    },
+    [completedLessons],
+  );
+
+  const canExpandSection = useCallback(
+    (sectionId: number) => {
+      const sections = formation.sections;
+      if (!sections) return false;
+      const currentIndex = sections.findIndex((s) => s.id === sectionId);
+      if (currentIndex === 0) return true;
+      if (currentIndex === -1) return false;
+      const prevSection = sections[currentIndex - 1];
+      return isSectionComplete(prevSection);
+    },
+    [formation.sections, isSectionComplete],
+  );
+
+  const markLessonComplete = useCallback(
+    (lessonId: string) => {
+      setCompletedLessons((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(lessonId)) {
+          newSet.delete(lessonId);
+        } else {
+          newSet.add(lessonId);
+        }
+
+        // Save to localStorage
+        localStorage.setItem(
+          `formation-${formation._id}-progress`,
+          JSON.stringify([...newSet]),
+        );
+        return newSet;
+      });
+    },
+    [formation._id],
+  );
 
   const totalLessons =
     formation.sections?.reduce(
@@ -92,8 +135,13 @@ export default function FormationContent({ formation }: FormationContentProps) {
             className="bg-white rounded-lg shadow-sm border"
           >
             <button
-              onClick={() => toggleSection(section.id)}
-              className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+              onClick={() => {
+                if (canExpandSection(section.id)) {
+                  toggleSection(section.id);
+                }
+              }}
+              disabled={!canExpandSection(section.id)}
+              className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -130,11 +178,12 @@ export default function FormationContent({ formation }: FormationContentProps) {
                           onClick={() =>
                             markLessonComplete(`${section.id}-${lesson.id}`)
                           }
+                          disabled={!lesson.content}
                           className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                             completedLessons.has(`${section.id}-${lesson.id}`)
                               ? "bg-green-600 border-green-600"
                               : "border-gray-300"
-                          }`}
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           {completedLessons.has(
                             `${section.id}-${lesson.id}`,
@@ -149,9 +198,23 @@ export default function FormationContent({ formation }: FormationContentProps) {
                           </p>
                         </div>
                       </div>
-                      <button className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                      <button
+                        onClick={() => {
+                          setSelectedLesson({
+                            sectionId: section.id,
+                            lessonId: lesson.id,
+                            lesson,
+                          });
+                          setError(null);
+                          setModalOpen(true);
+                        }}
+                        disabled={!lesson.content}
+                        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
                         <Play className="w-4 h-4" />
-                        Regarder
+                        {completedLessons.has(`${section.id}-${lesson.id}`)
+                          ? "Revoir"
+                          : "Regarder"}
                       </button>
                     </div>
                   ))}
@@ -161,6 +224,59 @@ export default function FormationContent({ formation }: FormationContentProps) {
           </div>
         ))}
       </div>
+
+      {/* Video Player Modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+        <DialogContent className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          {selectedLesson && (
+            <>
+              <DialogTitle asChild>
+                <h3 className="text-lg font-semibold mb-4">
+                  {selectedLesson.lesson.title}
+                </h3>
+              </DialogTitle>
+              {error ? (
+                <p className="text-red-600">{error}</p>
+              ) : (
+                <ReactPlayer
+                  src={selectedLesson.lesson.content}
+                  controls
+                  onReady={() => setError(null)}
+                  onError={() =>
+                    setError(
+                      "Erreur lors du chargement de la vidéo. Vérifiez le lien.",
+                    )
+                  }
+                  width="100%"
+                  height="auto"
+                />
+              )}
+              <div className="mt-4 flex gap-4">
+                <button
+                  onClick={() =>
+                    markLessonComplete(
+                      `${selectedLesson.sectionId}-${selectedLesson.lessonId}`,
+                    )
+                  }
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                >
+                  Marquer comme terminé
+                </button>
+                <button
+                  onClick={() => {
+                    setModalOpen(false);
+                    setSelectedLesson(null);
+                  }}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                >
+                  Fermer
+                </button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Certificate Section */}
       {progressPercentage === 100 && (
