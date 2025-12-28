@@ -159,6 +159,12 @@ export default function Header() {
                         Mes Commandes
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/mes-formations">
+                        <User className="w-4 h-4 mr-2" />
+                        Mes Formations
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={logout}>
                       <User className="w-4 h-4 mr-2" />
                       Déconnexion
@@ -342,6 +348,15 @@ export default function Header() {
                         >
                           <ShoppingBag className="w-4 h-4 mr-2" />
                           Mes Commandes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setMobileOpen(false);
+                            router.push("/mes-formations");
+                          }}
+                        >
+                          <User className="w-4 h-4 mr-2" />
+                          Mes Formations
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {
