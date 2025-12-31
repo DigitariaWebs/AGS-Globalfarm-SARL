@@ -115,7 +115,7 @@ export default function RegisterPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="bg-white rounded-2xl p-8 shadow-2xl backdrop-blur-sm"
+              className="bg-white rounded-2xl p-8 shadow-2xl backdrop-blur-sm max-h-[90vh] overflow-y-auto"
             >
               {/* Header Title */}
               <div className="text-center mb-8">

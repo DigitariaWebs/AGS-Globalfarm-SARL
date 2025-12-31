@@ -105,6 +105,7 @@ export default function FormationClientPage({
   const filteredPrograms = trainingPrograms.filter((program: Formation) => {
     if (activeCategory === "Tout") return true;
     if (activeCategory === "Présentiel") return program.type === "presentiel";
+    if (activeCategory === "En ligne") return program.type === "online";
     return program.category === activeCategory;
   });
 
