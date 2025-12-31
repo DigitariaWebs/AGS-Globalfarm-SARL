@@ -56,4 +56,20 @@ export async function getUserOrders(userId: string): Promise<Order[]> {
   }
 }
 
+export async function getOwnedFormations(userId: string): Promise<number[]> {
+  try {
+    const orders = await getUserOrders(userId);
+    const ownedSet = new Set<number>();
+    orders.forEach((order) => {
+      order.items.forEach((item) => {
+        if (item.id) ownedSet.add(item.id);
+      });
+    });
+    return Array.from(ownedSet);
+  } catch (error) {
+    console.error("Failed to fetch owned formations", error);
+    return [];
+  }
+}
+
 export { mongoose };

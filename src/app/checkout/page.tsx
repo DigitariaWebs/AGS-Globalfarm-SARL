@@ -20,19 +20,36 @@ export default function CheckoutPage() {
     country: "",
     phone: "",
   });
+  const [errors, setErrors] = useState({
+    street: "",
+    city: "",
+    postalCode: "",
+    country: "",
+    phone: "",
+  });
   const [saveAsDefault, setSaveAsDefault] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
 
+  const validateField = (field: string, value: string) => {
+    if (!value.trim()) {
+      setErrors((prev) => ({ ...prev, [field]: "Ce champ est requis" }));
+      return false;
+    }
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    return true;
+  };
+
   const handlePayment = async () => {
-    // Validate address form
-    if (
-      !addressForm.street ||
-      !addressForm.city ||
-      !addressForm.country ||
-      !addressForm.phone
-    ) {
-      setError("Veuillez remplir toutes les informations de livraison.");
+    // Validate all fields
+    const isValid =
+      validateField("street", addressForm.street) &&
+      validateField("city", addressForm.city) &&
+      validateField("country", addressForm.country) &&
+      validateField("phone", addressForm.phone);
+
+    if (!isValid) {
+      setError("Veuillez corriger les erreurs dans le formulaire.");
       return;
     }
 
@@ -205,21 +222,17 @@ export default function CheckoutPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Nom complet
                   </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    defaultValue={`${user.firstName} ${user.lastName}`}
-                  />
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                    {user.firstName} {user.lastName}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email
                   </label>
-                  <input
-                    type="email"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    defaultValue={user.email}
-                  />
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                    {user.email}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -228,13 +241,23 @@ export default function CheckoutPage() {
                   <textarea
                     name="street"
                     value={addressForm.street}
-                    onChange={(e) =>
-                      setAddressForm({ ...addressForm, street: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    onChange={(e) => {
+                      setAddressForm({
+                        ...addressForm,
+                        street: e.target.value,
+                      });
+                      if (errors.street) setErrors({ ...errors, street: "" });
+                    }}
+                    onBlur={() => validateField("street", addressForm.street)}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                      errors.street ? "border-red-500" : "border-gray-300"
+                    }`}
                     rows={3}
                     placeholder="Votre adresse complète"
                   />
+                  {errors.street && (
+                    <p className="text-red-500 text-xs mt-1">{errors.street}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -245,12 +268,22 @@ export default function CheckoutPage() {
                       type="text"
                       name="city"
                       value={addressForm.city}
-                      onChange={(e) =>
-                        setAddressForm({ ...addressForm, city: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      onChange={(e) => {
+                        setAddressForm({
+                          ...addressForm,
+                          city: e.target.value,
+                        });
+                        if (errors.city) setErrors({ ...errors, city: "" });
+                      }}
+                      onBlur={() => validateField("city", addressForm.city)}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                        errors.city ? "border-red-500" : "border-gray-300"
+                      }`}
                       placeholder="Ville"
                     />
+                    {errors.city && (
+                      <p className="text-red-500 text-xs mt-1">{errors.city}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -260,15 +293,29 @@ export default function CheckoutPage() {
                       type="text"
                       name="postalCode"
                       value={addressForm.postalCode}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setAddressForm({
                           ...addressForm,
                           postalCode: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        });
+                        if (errors.postalCode)
+                          setErrors({ ...errors, postalCode: "" });
+                      }}
+                      onBlur={() => {
+                        // Optional field, but if filled, could validate format, but for now just clear
+                        if (errors.postalCode)
+                          setErrors({ ...errors, postalCode: "" });
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                        errors.postalCode ? "border-red-500" : "border-gray-300"
+                      }`}
                       placeholder="Code postal"
                     />
+                    {errors.postalCode && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.postalCode}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -279,15 +326,24 @@ export default function CheckoutPage() {
                     type="text"
                     name="country"
                     value={addressForm.country}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setAddressForm({
                         ...addressForm,
                         country: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      });
+                      if (errors.country) setErrors({ ...errors, country: "" });
+                    }}
+                    onBlur={() => validateField("country", addressForm.country)}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                      errors.country ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="Pays"
                   />
+                  {errors.country && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.country}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -297,12 +353,19 @@ export default function CheckoutPage() {
                     type="tel"
                     name="phone"
                     value={addressForm.phone}
-                    onChange={(e) =>
-                      setAddressForm({ ...addressForm, phone: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    onChange={(e) => {
+                      setAddressForm({ ...addressForm, phone: e.target.value });
+                      if (errors.phone) setErrors({ ...errors, phone: "" });
+                    }}
+                    onBlur={() => validateField("phone", addressForm.phone)}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                      errors.phone ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="Votre numéro de téléphone"
                   />
+                  {errors.phone && (
+                    <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+                  )}
                 </div>
 
                 {/* Save as Default Address */}

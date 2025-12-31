@@ -1,4 +1,6 @@
-import { getFormations } from "@/lib/db";
+import { getFormations, getOwnedFormations } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import FormationClientPage from "./FormationClientPage";
 
 const categories = ["Tout", "En ligne", "Présentiel"];
@@ -62,12 +64,20 @@ export default async function FormationPage() {
   const formations = await getFormations();
   const trainingPrograms = JSON.parse(JSON.stringify(formations));
 
+  // Check user's owned formations
+  const session = await auth.api.getSession({ headers: await headers() });
+  let ownedFormationIds: number[] = [];
+  if (session?.user?.id) {
+    ownedFormationIds = await getOwnedFormations(session.user.id);
+  }
+
   return (
     <FormationClientPage
       trainingPrograms={trainingPrograms}
       categories={categories}
       benefits={benefits}
       processSteps={processSteps}
+      ownedFormationIds={ownedFormationIds}
     />
   );
 }

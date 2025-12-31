@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getUserOrders, getFormations } from "@/lib/db";
+import { getUserOrders, getFormations, getOwnedFormations } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import MesFormationsClient from "./MesFormationsClient";
@@ -16,9 +16,12 @@ export default async function MesFormationsPage() {
   const orders = await getUserOrders(session.user.id);
   const allFormations = await getFormations();
   const serializedFormations = JSON.parse(JSON.stringify(allFormations));
+  const ownedFormationIds = await getOwnedFormations(session.user.id);
 
   // Extract purchased formations with their session info
-  const purchasedOnlineCourses: Formation[] = [];
+  const purchasedOnlineCourses = serializedFormations.filter(
+    (f: Formation) => f.type === "online" && ownedFormationIds.includes(f.id),
+  );
   const purchasedPresentialSessions: {
     formation: Formation;
     session: FormationSession;
@@ -30,27 +33,17 @@ export default async function MesFormationsPage() {
         const formation = serializedFormations.find(
           (f: Formation) => f.id === item.id,
         );
-        if (formation) {
-          if (formation.type === "online") {
-            purchasedOnlineCourses.push(formation);
-          } else if (formation.type === "presentiel" && item.sessionId) {
-            const session = formation.sessions?.find(
-              (s: Section) => s.id === item.sessionId,
-            );
-            if (session) {
-              purchasedPresentialSessions.push({ formation, session });
-            }
+        if (formation && formation.type === "presentiel" && item.sessionId) {
+          const session = formation.sessions?.find(
+            (s: Section) => s.id === item.sessionId,
+          );
+          if (session) {
+            purchasedPresentialSessions.push({ formation, session });
           }
         }
       }
     });
   });
-
-  // Remove duplicates for online courses
-  const uniqueOnlineCourses = purchasedOnlineCourses.filter(
-    (course, index, self) =>
-      self.findIndex((c) => c.id === course.id) === index,
-  );
 
   // Categorize presential sessions by status
   const prevFormations = purchasedPresentialSessions.filter(
@@ -62,7 +55,7 @@ export default async function MesFormationsPage() {
 
   return (
     <MesFormationsClient
-      onlineCourses={uniqueOnlineCourses}
+      onlineCourses={purchasedOnlineCourses}
       previousFormations={prevFormations}
       upcomingFormations={upFormations}
     />

@@ -58,6 +58,7 @@ interface FormationClientPageProps {
   categories: string[];
   benefits: Benefit[];
   processSteps: ProcessStep[];
+  ownedFormationIds: number[];
 }
 
 export default function FormationClientPage({
@@ -65,6 +66,7 @@ export default function FormationClientPage({
   categories,
   benefits,
   processSteps,
+  ownedFormationIds,
 }: FormationClientPageProps) {
   const router = useRouter();
   const { addToCart } = useCart();
@@ -80,6 +82,11 @@ export default function FormationClientPage({
   }, []);
 
   const handleEnroll = (program: Formation) => {
+    // Check if user already owns this formation
+    if (ownedFormationIds.includes(program.id)) {
+      alert("Vous avez déjà acheté cette formation.");
+      return;
+    }
     // Check if there's an open session for presentiel formations
     if (program.type === "presentiel") {
       const hasOpenSession = program.sessions?.some(
@@ -419,33 +426,38 @@ export default function FormationClientPage({
                           <Button
                             size="sm"
                             className={`flex-1 shrink-0 ${
-                              program.type === "presentiel" &&
-                              !program.sessions?.some(
-                                (session) => session.status === "open",
-                              )
+                              ownedFormationIds.includes(program.id) ||
+                              (program.type === "presentiel" &&
+                                !program.sessions?.some(
+                                  (session) => session.status === "open",
+                                ))
                                 ? "bg-gray-400 cursor-not-allowed"
                                 : "bg-green-600 hover:bg-green-700"
                             } text-white`}
                             disabled={
-                              program.type === "presentiel" &&
-                              !program.sessions?.some(
-                                (session) => session.status === "open",
-                              )
+                              ownedFormationIds.includes(program.id) ||
+                              (program.type === "presentiel" &&
+                                !program.sessions?.some(
+                                  (session) => session.status === "open",
+                                ))
                             }
                             onClick={() => handleEnroll(program)}
                           >
-                            {program.type === "presentiel" &&
-                            !program.sessions?.some(
-                              (session) => session.status === "open",
-                            )
-                              ? "Fermé"
-                              : "S'inscrire"}
-                            {program.type !== "presentiel" ||
-                            program.sessions?.some(
-                              (session) => session.status === "open",
-                            ) ? (
+                            {ownedFormationIds.includes(program.id)
+                              ? "Déjà acheté"
+                              : program.type === "presentiel" &&
+                                  !program.sessions?.some(
+                                    (session) => session.status === "open",
+                                  )
+                                ? "Fermé"
+                                : "S'inscrire"}
+                            {ownedFormationIds.includes(program.id) ||
+                            (program.type !== "presentiel" &&
+                              !program.sessions?.some(
+                                (session) => session.status === "open",
+                              )) ? null : (
                               <ArrowRight className="w-4 h-4 ml-1" />
-                            ) : null}
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -887,32 +899,37 @@ export default function FormationClientPage({
                           closeModal();
                         }}
                         disabled={
-                          modalProgram.type === "presentiel" &&
-                          !modalProgram.sessions?.some(
-                            (session) => session.status === "open",
-                          )
+                          ownedFormationIds.includes(modalProgram.id) ||
+                          (modalProgram.type === "presentiel" &&
+                            !modalProgram.sessions?.some(
+                              (session) => session.status === "open",
+                            ))
                         }
                         className={`flex-1 shadow-lg hover:shadow-xl transition-all ${
-                          modalProgram.type === "presentiel" &&
-                          !modalProgram.sessions?.some(
-                            (session) => session.status === "open",
-                          )
+                          ownedFormationIds.includes(modalProgram.id) ||
+                          (modalProgram.type === "presentiel" &&
+                            !modalProgram.sessions?.some(
+                              (session) => session.status === "open",
+                            ))
                             ? "bg-gray-400 cursor-not-allowed"
                             : "bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
                         }`}
                       >
-                        {modalProgram.type === "presentiel" &&
-                        !modalProgram.sessions?.some(
-                          (session) => session.status === "open",
-                        )
-                          ? "Aucune Session Ouverte"
-                          : "S'inscrire Maintenant"}
-                        {modalProgram.type !== "presentiel" ||
-                        modalProgram.sessions?.some(
-                          (session) => session.status === "open",
-                        ) ? (
+                        {ownedFormationIds.includes(modalProgram.id)
+                          ? "Déjà acheté"
+                          : modalProgram.type === "presentiel" &&
+                              !modalProgram.sessions?.some(
+                                (session) => session.status === "open",
+                              )
+                            ? "Aucune Session Ouverte"
+                            : "S'inscrire Maintenant"}
+                        {ownedFormationIds.includes(modalProgram.id) ||
+                        (modalProgram.type !== "presentiel" &&
+                          !modalProgram.sessions?.some(
+                            (session) => session.status === "open",
+                          )) ? null : (
                           <ArrowRight className="w-4 h-4 ml-2" />
-                        ) : null}
+                        )}
                       </Button>
                     </div>
                   </div>
