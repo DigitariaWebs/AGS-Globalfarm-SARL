@@ -24,9 +24,9 @@ export default async function FormationDetailPage({
     order.items.some((item) => "title" in item && item._id === formationId),
   );
 
-  if (!ownsFormation) {
-    redirect("/mes-formations");
-  }
+  // if (!ownsFormation) {
+  //   redirect("/mes-formations");
+  // }
 
   // Get formation details
   const formations = await getFormations();
