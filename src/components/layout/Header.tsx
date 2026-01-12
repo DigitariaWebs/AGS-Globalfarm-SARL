@@ -81,7 +81,7 @@ export default function Header() {
               <Link href="/" className="flex items-center gap-2">
                 <Image
                   src="/Logo.png"
-                  alt="AGS Global Farm Logo"
+                  alt="AGROPASTORAL GLOBALE FARMS Logo"
                   width={428}
                   height={428}
                   className="h-10 w-auto"

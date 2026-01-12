@@ -14,7 +14,7 @@ type CartContextType = {
   cart: CartItem[];
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
-  addToCart: (item: Product | Formation) => void;
+  addToCart: (item: Product | Formation, selectedSessionId?: number) => void;
   removeFromCart: (itemId: number) => void;
   updateQuantity: (itemId: number, newQuantity: number) => void;
   clearCart: () => void;
@@ -38,9 +38,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (item: Product | Formation) => {
+  const addToCart = (item: Product | Formation, selectedSessionId?: number) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
+      const existingItem = prevCart.find((cartItem) => {
+        // For formations with sessions, also check if same session
+        if ("title" in item && selectedSessionId) {
+          return (
+            cartItem.id === item.id &&
+            cartItem.selectedSessionId === selectedSessionId
+          );
+        }
+        return cartItem.id === item.id;
+      });
       if (existingItem) {
         // For formations, don't increase quantity since they are enrollments
         if ("title" in item) {
@@ -52,7 +61,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
             : cartItem,
         );
       }
-      return [...prevCart, { ...item, quantity: 1 }];
+      return [
+        ...prevCart,
+        { ...item, quantity: 1, selectedSessionId: selectedSessionId },
+      ];
     });
     setIsCartOpen(true);
   };

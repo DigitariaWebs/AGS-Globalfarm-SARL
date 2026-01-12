@@ -16,7 +16,7 @@ export default function ActivitiesSection() {
       id: "1",
       image: "/GreenHouse.png",
       category: "PRODUCTION",
-      title: "Agriculture en serre moderne",
+      title: "Agriculture sous serre",
     },
     {
       id: "2",
@@ -28,7 +28,7 @@ export default function ActivitiesSection() {
       id: "3",
       image: "/Drone.png",
       category: "TECHNOLOGIE",
-      title: "Surveillance par drone",
+      title: "Cartographie par drone",
     },
     {
       id: "4",

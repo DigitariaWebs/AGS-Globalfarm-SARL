@@ -127,12 +127,37 @@ export default function Cart() {
                           <h3 className="font-bold text-gray-900 mb-1.5 text-sm line-clamp-2">
                             {"name" in item ? item.name : item.title}
                           </h3>
+                          {/* Show selected session for presentiel formations */}
+                          {"title" in item && item.selectedSessionId && (
+                            <p className="text-xs text-gray-600 mb-1">
+                              Session {item.selectedSessionId}
+                              {item.sessions &&
+                                (() => {
+                                  const session = item.sessions.find(
+                                    (s) => s.id === item.selectedSessionId,
+                                  );
+                                  return session ? (
+                                    <span className="ml-1">
+                                      (
+                                      {new Date(
+                                        session.startDate,
+                                      ).toLocaleDateString()}{" "}
+                                      -{" "}
+                                      {new Date(
+                                        session.endDate,
+                                      ).toLocaleDateString()}
+                                      )
+                                    </span>
+                                  ) : null;
+                                })()}
+                            </p>
+                          )}
                           <p className="text-base font-bold text-green-600 mb-3">
                             {item.price.toLocaleString()} FCFA
                           </p>
                           <div className="flex items-center justify-between">
                             {/* Quantity Controls - Only for products */}
-                            {"name" in item && (
+                            {"name" in item ? (
                               <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
                                 <button
                                   onClick={() =>
@@ -155,6 +180,10 @@ export default function Cart() {
                                 >
                                   <Plus className="w-4 h-4 text-gray-700" />
                                 </button>
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-500 bg-green-50 px-3 py-1.5 rounded-lg">
+                                Inscription
                               </div>
                             )}
                             {/* Remove Button */}

@@ -36,9 +36,9 @@ export default function AboutSection() {
               L&apos;agriculture de demain se cultive aujourd&apos;hui
             </h2>
             <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-              AGS Global Farm est bien plus qu&apos;une simple exploitation
-              agricole. Nous sommes un centre d&apos;innovation dédié à la
-              transformation de l&apos;agriculture en Afrique.
+              AGROPASTORAL GLOBALE FARMS est bien plus qu&apos;une simple
+              exploitation agricole. Nous sommes un centre d&apos;innovation
+              dédié à la transformation de l&apos;agriculture en Afrique.
             </p>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               Notre mission est double : produire de manière durable grâce aux

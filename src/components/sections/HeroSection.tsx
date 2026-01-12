@@ -105,7 +105,7 @@ export default function HeroSection() {
           viewport={{ once: true, margin: "-20% 0px -20% 0px" }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          AGS Global Farm
+          AGROPASTORAL GLOBALE FARMS
         </motion.h1>
         {/* Prominent slogan near the site name */}
         <motion.div
@@ -136,8 +136,7 @@ export default function HeroSection() {
         >
           Solutions agricoles innovantes pour des récoltes abondantes et un
           avenir durable. Nous accompagnons les agriculteurs vers une production
-          plus responsable et plus performante grâce à nos technologies de
-          pointe.
+          plus responsable et plus performante.
         </motion.p>
       </div>
 

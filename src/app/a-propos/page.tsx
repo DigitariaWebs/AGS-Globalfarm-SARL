@@ -61,9 +61,9 @@ export default function AProposPage() {
                 L&apos;agriculture de demain se cultive aujourd&apos;hui
               </h2>
               <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                AGS Global Farm est bien plus qu&apos;une simple exploitation
-                agricole. Nous sommes un centre d&apos;innovation dédié à la
-                transformation de l&apos;agriculture en Afrique.
+                AGROPASTORAL GLOBALE FARMS est bien plus qu&apos;une simple
+                exploitation agricole. Nous sommes un centre d&apos;innovation
+                dédié à la transformation de l&apos;agriculture en Afrique.
               </p>
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
                 Notre mission est double : produire de manière durable grâce aux
@@ -81,7 +81,7 @@ export default function AProposPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <div className="relative w-full max-w-[520px] mx-auto md:mx-0 md:ml-auto">
+              <div className="relative w-full max-w-130 mx-auto md:mx-0 md:ml-auto">
                 {/* Accent rounded frame behind the image */}
                 <div
                   className="absolute -inset-2 sm:-inset-3 md:-inset-4 rounded-[2.25rem] md:rounded-[3.5rem] border-[6px] sm:border-8 md:border-10 opacity-60"
@@ -133,7 +133,7 @@ export default function AProposPage() {
                 >
                   <Image
                     src={`/${image}`}
-                    alt={`AGS Global Farm - Image ${index + 1}`}
+                    alt={`AGROPASTORAL GLOBALE FARMS - Image ${index + 1}`}
                     fill
                     className="object-cover"
                   />

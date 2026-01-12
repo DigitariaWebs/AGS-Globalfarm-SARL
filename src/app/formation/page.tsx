@@ -14,15 +14,14 @@ const benefits = [
   },
   {
     icon: "Award",
-    title: "Certification Reconnue",
-    description:
-      "Obtenez un certificat validé qui renforce votre crédibilité professionnelle.",
+    title: "Attestation de fin de formation",
+    description: "Obtenez une attestation qui renforce votre crédibilité.",
   },
   {
     icon: "Users",
     title: "Apprentissage Pratique",
     description:
-      "70% de pratique sur le terrain pour une expérience concrète et applicable.",
+      "Des ateliers pratiques sur le terrain pour une expérience concrète et applicable.",
   },
   {
     icon: "Target",
@@ -54,8 +53,7 @@ const processSteps = [
   {
     number: "04",
     title: "Certification",
-    description:
-      "Recevez votre certificat officiel après avoir réussi l'évaluation finale.",
+    description: "Recevez votre attestation à la fin de la formation.",
   },
 ];
 

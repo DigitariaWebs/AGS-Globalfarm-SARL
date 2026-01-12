@@ -7,7 +7,7 @@ const mongoClient = new MongoClient(
 );
 
 export const auth = betterAuth({
-  database: mongodbAdapter(mongoClient.db("auth-db")),
+  database: mongodbAdapter(mongoClient.db()),
   emailAndPassword: {
     enabled: true,
   },

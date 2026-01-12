@@ -6,41 +6,41 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const featuredEvent = {
-  day: "15",
-  month: "Oct",
-  title: "Initiation à la Culture Hors-sol",
+  day: "16-20",
+  month: "Fév",
+  title: "Formation pour débutant en culture sous serre",
   description:
-    "Rejoignez-nous pour une journée complète d'apprentissage pratique sur les techniques de culture moderne. Au programme : hydroponie, gestion des serres intelligentes, et optimisation des rendements.",
+    "Rejoignez-nous pour 5 jours de formation intensive sur les techniques de culture moderne. Au programme : Initiation à la serriculture ; Préparation du sol et Techniques de culture, Contrôle des ravageurs et des maladies et gestion financière.",
   location: "Ferme AGS, Keur Ndiaye Lo",
-  time: "09:00 - 16:00",
+  time: "08:00 - 17:00",
   image: "/BlackManExplainingTwo.png",
   spots: "8 places restantes",
 };
 
 const upcomingEvents = [
   {
-    day: "02",
-    month: "Nov",
-    title: "Masterclass Business Plan Agricole",
-    location: "En ligne (Zoom)",
-    time: "10:00 - 13:00",
+    day: "16-20",
+    month: "Fév",
+    title: "Formation pour débutant",
+    location: "Ferme AGS, Keur Ndiaye Lo",
+    time: "08:00 - 17:00",
     category: "FORMATION",
   },
   {
-    day: "20",
-    month: "Nov",
-    title: "Journée Portes Ouvertes",
-    location: "Ferme AGS",
-    time: "09:00 - 17:00",
-    category: "ÉVÉNEMENT",
+    day: "16-20",
+    month: "Mars",
+    title: "Formation pour débutant",
+    location: "Ferme AGS, Keur Ndiaye Lo",
+    time: "08:00 - 17:00",
+    category: "FORMATION",
   },
   {
-    day: "05",
-    month: "Déc",
-    title: "Atelier Drone & Surveillance",
-    location: "Ferme AGS",
-    time: "14:00 - 18:00",
-    category: "ATELIER",
+    day: "20-25",
+    month: "Avr",
+    title: "Formation pour débutant",
+    location: "Ferme AGS, Keur Ndiaye Lo",
+    time: "08:00 - 17:00",
+    category: "FORMATION",
   },
 ];
 
@@ -172,7 +172,7 @@ export default function EventsSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              À venir
+              Les prochaines formations débutantes
             </motion.h3>
 
             {upcomingEvents.map((event, index) => (

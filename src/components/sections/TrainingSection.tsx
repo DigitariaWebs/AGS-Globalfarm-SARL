@@ -11,7 +11,7 @@ export default function TrainingSection() {
     "Technologies agricoles et drones",
     "Marketing et commercialisation",
     "Pratique sur terrain réel",
-    "Certification professionnelle",
+    "Attestation de fin de formation",
   ];
 
   return (
@@ -33,7 +33,7 @@ export default function TrainingSection() {
             }}
           >
             <Sprout className="w-5 h-5 md:w-6 md:h-6" />
-            Formation Professionnelle
+            Formation
           </div>
         </motion.div>
 
@@ -91,21 +91,21 @@ export default function TrainingSection() {
                 backgroundColor: "var(--color-brand, #16a34a)",
               }}
             >
-              Programme Agri-Business
+              Programme
             </div>
 
             {/* Description */}
             <div className="font-normal text-muted-foreground text-lg leading-[35px]">
-              Chez AGS Global Farm, nous offrons un programme de formation
-              complet conçu pour transformer votre passion en expertise
-              professionnelle. De la maîtrise des techniques de culture moderne
-              à la gestion d&apos;entreprise agricole, en passant par
-              l&apos;utilisation des technologies innovantes, chaque module est
-              dispensé par des experts du terrain. Notre approche allie théorie
-              avancée et pratique intensive, avec des sessions en conditions
-              réelles dans nos installations. Notre objectif : vous équiper des
-              compétences nécessaires pour réussir dans l&apos;agriculture de
-              demain.
+              Chez AGROPASTORAL GLOBALE FARMS, nous offrons un programme de
+              formation complet conçu pour transformer votre passion en
+              expertise professionnelle. De la maîtrise des techniques de
+              culture moderne à la gestion d&apos;entreprise agricole, en
+              passant par l&apos;utilisation des technologies innovantes, chaque
+              module est dispensé par des experts du terrain. Notre approche
+              allie théorie avancée et pratique intensive, avec des sessions en
+              conditions réelles dans nos installations. Notre objectif : vous
+              équiper des compétences nécessaires pour réussir dans
+              l&apos;agriculture de demain.
             </div>
 
             {/* Benefits List */}

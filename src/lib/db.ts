@@ -9,9 +9,7 @@ const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 export async function connectToDatabase() {
   try {
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(uri, {
-        dbName: "auth-db",
-      });
+      await mongoose.connect(uri);
       console.log("Connected to MongoDB with Mongoose");
     }
     return mongoose.connection.db;

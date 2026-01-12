@@ -16,15 +16,15 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <Image
               src="/Logo.png"
-              alt="AGS Global Farm"
+              alt="AGROPASTORAL GLOBALE FARMS"
               width={428}
               height={428}
               className="h-12 w-auto mb-4"
             />
             <p className="text-base font-normal leading-[28px] text-muted-foreground">
-              AGS Global Farm révolutionne l&apos;agriculture au Sénégal en
-              alliant techniques modernes et formation pratique. Nous cultivons
-              l&apos;avenir de l&apos;agriculture africaine.
+              AGROPASTORAL GLOBALE FARMS révolutionne l&apos;agriculture au
+              Sénégal en alliant techniques modernes et formation pratique. Nous
+              cultivons l&apos;avenir de l&apos;agriculture africaine.
             </p>
           </div>
 
@@ -137,7 +137,7 @@ export default function Footer() {
         {/* Footer Bottom */}
         <div className="flex flex-col sm:flex-row justify-between items-center pt-8 border-t-2 border-primary/20">
           <p className="text-sm font-medium leading-[17px] text-muted-foreground mb-4 sm:mb-0">
-            © 2025 AGS Global Farm SARL. Tous droits réservés.
+            © 2025 AGROPASTORAL GLOBALE FARMS SARL. Tous droits réservés.
           </p>
           <div className="flex items-center gap-6">
             <a

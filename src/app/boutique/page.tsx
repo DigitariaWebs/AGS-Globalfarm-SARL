@@ -8,5 +8,12 @@ export default async function BoutiquePage() {
   const products = await getProducts();
   const productsData = JSON.parse(JSON.stringify(products));
 
-  return <BoutiqueClientPage products={productsData} categories={categories} />;
+  // Filter to show only cucumber products
+  const filteredProducts = productsData.filter((product: any) =>
+    product.name.toLowerCase().includes("concombre"),
+  );
+
+  return (
+    <BoutiqueClientPage products={filteredProducts} categories={categories} />
+  );
 }

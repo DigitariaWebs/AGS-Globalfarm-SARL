@@ -22,49 +22,26 @@ const contactInfo = [
   {
     icon: Phone,
     title: "Téléphone",
-    details: ["+237 XXX XXX XXX", "+237 YYY YYY YYY"],
+    details: ["78 138 38 38", "33 845 63 21"],
     description: "Lun - Ven : 8h - 17h",
   },
   {
     icon: Mail,
     title: "Email",
-    details: ["contact@agsglobalfarm.com", "info@agsglobalfarm.com"],
+    details: ["contact@agropastoralglobalefarms.com"],
     description: "Réponse sous 24h",
   },
   {
     icon: MapPin,
     title: "Adresse",
-    details: ["Yaoundé, Cameroun", "Quartier Bastos"],
+    details: ["Cité nouvel horizon, villa 642", "Keur Ndiaye LO, Dakar"],
     description: "Visitez-nous sur rendez-vous",
   },
   {
     icon: Clock,
     title: "Horaires",
-    details: ["Lun - Ven : 8h00 - 17h00", "Sam : 9h00 - 13h00"],
-    description: "Fermé le dimanche",
-  },
-];
-
-const departments = [
-  {
-    name: "Service Commercial",
-    email: "ventes@agsglobalfarm.com",
-    description: "Pour vos commandes et devis",
-  },
-  {
-    name: "Formations",
-    email: "formation@agsglobalfarm.com",
-    description: "Inscriptions et programmes",
-  },
-  {
-    name: "Support Technique",
-    email: "support@agsglobalfarm.com",
-    description: "Assistance et conseils agricoles",
-  },
-  {
-    name: "Partenariats",
-    email: "partenariat@agsglobalfarm.com",
-    description: "Collaborations et projets",
+    details: ["Lun - Ven : 8h00 - 17h00"],
+    description: "Fermé samedi et dimanche",
   },
 ];
 
@@ -109,7 +86,7 @@ const faqs = [
   {
     question: "Comment puis-je devenir partenaire ?",
     answer:
-      "Contactez notre service partenariats à partenariat@agsglobalfarm.com avec votre proposition de collaboration.",
+      "Contactez-nous à contact@agropastoralglobalefarms.com avec votre proposition de collaboration.",
   },
   {
     question: "Offrez-vous des services de conseil ?",
@@ -491,32 +468,6 @@ function ContactPageContent() {
               viewport={{ once: true }}
               className="space-y-6"
             >
-              {/* Departments */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  Nos Départements
-                </h3>
-                <div className="space-y-4">
-                  {departments.map((dept, index) => (
-                    <div key={index} className="pb-4 border-b last:border-0">
-                      <h4 className="font-semibold text-gray-900 mb-1">
-                        {dept.name}
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {dept.description}
-                      </p>
-                      <a
-                        href={`mailto:${dept.email}`}
-                        className="text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-1"
-                      >
-                        <Mail className="w-4 h-4" />
-                        {dept.email}
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Social Media */}
               <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">

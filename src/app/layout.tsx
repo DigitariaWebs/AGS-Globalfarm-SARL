@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AGS Global Farm SARL - Agriculture Durable & Innovante",
+  title: "AGROPASTORAL GLOBALE FARMS SARL - Agriculture Durable & Innovante",
   description:
     "Solutions agricoles innovantes pour des récoltes abondantes et un avenir durable",
 };

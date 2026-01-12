@@ -135,7 +135,10 @@ export type Formation = {
   updatedAt: Date;
 };
 
-export type CartItem = (Product | Formation) & { quantity: number };
+export type CartItem = (Product | Formation) & {
+  quantity: number;
+  selectedSessionId?: number; // For presentiel formations with multiple sessions
+};
 
 // User form data type for registration
 export type UserFormData = {
