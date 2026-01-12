@@ -18,21 +18,21 @@ export default async function FormationDetailPage({
 
   const { id: formationId } = await params;
 
-  // Check if user owns this formation
-  const orders = await getUserOrders(session.user.id);
-  const ownsFormation = orders.some((order) =>
-    order.items.some((item) => "title" in item && item._id === formationId),
-  );
-
-  // if (!ownsFormation) {
-  //   redirect("/mes-formations");
-  // }
-
   // Get formation details
   const formations = await getFormations();
   const formation = formations.find((f) => f._id?.valueOf() === formationId);
 
   if (!formation || formation.type !== "online") {
+    redirect("/mes-formations");
+  }
+
+  // Check if user owns this formation using numeric ID
+  const orders = await getUserOrders(session.user.id);
+  const ownsFormation = orders.some((order) =>
+    order.items.some((item) => "title" in item && item.id === formation.id),
+  );
+
+  if (!ownsFormation) {
     redirect("/mes-formations");
   }
 
