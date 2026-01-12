@@ -14,7 +14,7 @@ export default function ActivitiesSection() {
   const activityCards: ActivityCard[] = [
     {
       id: "1",
-      image: "/GreenHouse.png",
+      image: "/Pickles.png",
       category: "PRODUCTION",
       title: "Agriculture sous serre",
     },

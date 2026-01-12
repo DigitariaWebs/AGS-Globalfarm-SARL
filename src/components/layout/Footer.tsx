@@ -137,7 +137,7 @@ export default function Footer() {
         {/* Footer Bottom */}
         <div className="flex flex-col sm:flex-row justify-between items-center pt-8 border-t-2 border-primary/20">
           <p className="text-sm font-medium leading-[17px] text-muted-foreground mb-4 sm:mb-0">
-            © 2025 AGROPASTORAL GLOBALE FARMS SARL. Tous droits réservés.
+            © 2026 AGROPASTORAL GLOBALE FARMS SARL. Tous droits réservés.
           </p>
           <div className="flex items-center gap-6">
             <a
