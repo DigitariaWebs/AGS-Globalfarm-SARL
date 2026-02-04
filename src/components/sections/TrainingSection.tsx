@@ -51,7 +51,7 @@ export default function TrainingSection() {
               <Image
                 className="w-full h-[542px] object-cover rounded-lg shadow-lg"
                 alt="Formation en serre agricole"
-                src="/GreenHouse.png"
+                src="/Pickles.png"
                 width={900}
                 height={542}
               />

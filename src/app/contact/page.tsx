@@ -23,12 +23,12 @@ const contactInfo = [
     icon: Phone,
     title: "Téléphone",
     details: ["78 138 38 38", "33 845 63 21"],
-    description: "Lun - Ven : 8h - 17h",
+    description: "Lun - Ven : 8h - 13h",
   },
   {
     icon: Mail,
     title: "Email",
-    details: ["contact@agropastoralglobalefarms.com"],
+    details: ["contact@agsglobalfarm.com"],
     description: "Réponse sous 24h",
   },
   {
@@ -86,7 +86,7 @@ const faqs = [
   {
     question: "Comment puis-je devenir partenaire ?",
     answer:
-      "Contactez-nous à contact@agropastoralglobalefarms.com avec votre proposition de collaboration.",
+      "Contactez-nous à contact@agsglobalfarm.com avec votre proposition de collaboration.",
   },
   {
     question: "Offrez-vous des services de conseil ?",
@@ -252,7 +252,7 @@ function ContactPageContent() {
                   className="bg-white/10 backdrop-blur-sm text-white border-white/30 hover:bg-white/20 text-base font-semibold"
                 >
                   <Phone className="w-5 h-5 mr-2" />
-                  +237 XXX XXX XXX
+                  +221 XXX XXX XXX
                 </Button>
               </div>
             </motion.div>
@@ -409,7 +409,7 @@ function ContactPageContent() {
                         value={formData.phone}
                         onChange={handleChange}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
-                        placeholder="+237 XXX XXX XXX"
+                        placeholder="+221 XXX XXX XXX"
                       />
                     </div>
 
