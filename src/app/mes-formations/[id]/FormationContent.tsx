@@ -253,16 +253,20 @@ export default function FormationContent({ formation }: FormationContentProps) {
                 />
               )}
               <div className="mt-4 flex gap-4">
-                <button
-                  onClick={() =>
-                    markLessonComplete(
-                      `${selectedLesson.sectionId}-${selectedLesson.lessonId}`,
-                    )
-                  }
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-                >
-                  Marquer comme terminé
-                </button>
+                {!completedLessons.has(
+                  `${selectedLesson.sectionId}-${selectedLesson.lessonId}`,
+                ) && (
+                  <button
+                    onClick={() =>
+                      markLessonComplete(
+                        `${selectedLesson.sectionId}-${selectedLesson.lessonId}`,
+                      )
+                    }
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                  >
+                    Marquer comme terminé
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setModalOpen(false);
