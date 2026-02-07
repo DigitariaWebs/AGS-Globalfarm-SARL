@@ -34,6 +34,7 @@
     "qs": "^6.14.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-icons": "^5.5.0",
     "react-player": "^3.4.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.2.1"

@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin } from "lucide-react";
+import {
+  FaTiktok,
+  FaFacebook,
+  FaLinkedin,
+  FaFacebookF,
+  FaInstagram,
+  FaTwitter,
+  FaWhatsapp,
+} from "react-icons/fa";
 
 export default function Footer() {
   return (
@@ -141,31 +149,49 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-6">
             <a
-              href="https://facebook.com"
+              href="https://www.facebook.com/share/1B2n3pZo2Q/?mibextid=wwXIfr"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-green-600 transition-colors duration-200 hover:scale-110"
               aria-label="Facebook"
             >
-              <Facebook className="w-6 h-6" />
+              <FaFacebookF className="w-6 h-6" />
             </a>
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/agsglobalfarm?igsh=am12ZjdiejcxOGxy&utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-green-600 transition-colors duration-200 hover:scale-110"
               aria-label="Instagram"
             >
-              <Instagram className="w-6 h-6" />
+              <FaInstagram className="w-6 h-6" />
             </a>
             <a
-              href="https://linkedin.com"
+              href="https://www.tiktok.com/@agsglobalfarm?_r=1&_t=ZS-93jOVOTImou"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-green-600 transition-colors duration-200 hover:scale-110"
-              aria-label="LinkedIn"
+              aria-label="TikTok"
             >
-              <Linkedin className="w-6 h-6" />
+              <FaTiktok className="w-6 h-6" />
+            </a>
+            <a
+              href="https://x.com/agsglobalfarm?s=21"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-green-600 transition-colors duration-200 hover:scale-110"
+              aria-label="X (Twitter)"
+            >
+              <FaTwitter className="w-6 h-6" />
+            </a>
+            <a
+              href="https://wa.me/221781383838"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-green-600 transition-colors duration-200 hover:scale-110"
+              aria-label="WhatsApp"
+            >
+              <FaWhatsapp className="w-6 h-6" />
             </a>
           </div>
         </div>

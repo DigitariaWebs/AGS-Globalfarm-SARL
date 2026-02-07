@@ -1,240 +1,319 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { MapPin, Clock, ArrowRight, Calendar } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  MapPin,
+  Clock,
+  ArrowRight,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import type { Formation, FormationSession } from "@/types";
 
-const featuredEvent = {
-  day: "16-20",
-  month: "Fév",
-  title: "Formation pour débutant en culture sous serre",
-  description:
-    "Rejoignez-nous pour 5 jours de formation intensive sur les techniques de culture moderne. Au programme : Initiation à la serriculture ; Préparation du sol et Techniques de culture, Contrôle des ravageurs et des maladies et gestion financière.",
-  location: "Ferme AGS, Keur Ndiaye Lo",
-  time: "08:00 - 17:00",
-  image: "/BlackManExplainingTwo.png",
-  spots: "8 places restantes",
-};
+interface EventsSectionProps {
+  featuredSession: { formation: Formation; session: FormationSession } | null;
+  upcomingSessions: { formation: Formation; session: FormationSession }[];
+  onlineFormations: Formation[];
+}
 
-const upcomingEvents = [
-  {
-    day: "16-20",
-    month: "Fév",
-    title: "Formation pour débutant",
-    location: "Ferme AGS, Keur Ndiaye Lo",
-    time: "08:00 - 17:00",
-    category: "FORMATION",
-  },
-  {
-    day: "16-20",
-    month: "Mars",
-    title: "Formation pour débutant",
-    location: "Ferme AGS, Keur Ndiaye Lo",
-    time: "08:00 - 17:00",
-    category: "FORMATION",
-  },
-  {
-    day: "20-25",
-    month: "Avr",
-    title: "Formation pour débutant",
-    location: "Ferme AGS, Keur Ndiaye Lo",
-    time: "08:00 - 17:00",
-    category: "FORMATION",
-  },
-];
-
-export default function EventsSection() {
+export default function EventsSection({
+  featuredSession,
+  upcomingSessions,
+  onlineFormations,
+}: EventsSectionProps) {
   const router = useRouter();
 
-  const handleReservePlace = (eventTitle: string) => {
-    router.push(
-      `/contact?subject=event&event=${encodeURIComponent(eventTitle)}`,
+  // Combine presentiel sessions with online formations
+  const presentielSessions = featuredSession
+    ? [featuredSession, ...upcomingSessions]
+    : upcomingSessions;
+
+  // Convert online formations to carousel items (they don't have sessions)
+  const onlineItems = onlineFormations.map((formation) => ({
+    formation,
+    session: null as FormationSession | null,
+  }));
+
+  // Combine all items for carousel
+  const allSessions = [...presentielSessions, ...onlineItems];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  // Auto-play carousel
+  useEffect(() => {
+    if (!isAutoPlaying || allSessions.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % allSessions.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, allSessions.length]);
+
+  const handleReservePlace = (formationId: number) => {
+    const currentItem = allSessions[currentIndex];
+    const params = new URLSearchParams({
+      modal: "reserve",
+      id: formationId.toString(),
+    });
+
+    // Include sessionId for presentiel formations
+    if (currentItem.session) {
+      params.append("sessionId", currentItem.session.id.toString());
+    }
+
+    router.push(`/formation?${params.toString()}`);
+  };
+
+  const handlePrevious = () => {
+    setIsAutoPlaying(false);
+    setCurrentIndex(
+      (prev) => (prev - 1 + allSessions.length) % allSessions.length,
     );
   };
 
-  const handleEventClick = (event: (typeof upcomingEvents)[0]) => {
-    router.push(
-      `/contact?subject=event&event=${encodeURIComponent(event.title)}`,
-    );
+  const handleNext = () => {
+    setIsAutoPlaying(false);
+    setCurrentIndex((prev) => (prev + 1) % allSessions.length);
   };
+
+  const handleDotClick = (index: number) => {
+    setIsAutoPlaying(false);
+    setCurrentIndex(index);
+  };
+
+  const formatDateRange = (startDate: Date, endDate: Date) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const startDay = start.getDate();
+    const endDay = end.getDate();
+    const month = start.toLocaleDateString("fr-FR", { month: "short" });
+    return { day: `${startDay}-${endDay}`, month };
+  };
+
+  const formatTime = (startDate: Date, endDate: Date) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const startTime = start.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const endTime = end.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${startTime} - ${endTime}`;
+  };
+
+  if (allSessions.length === 0) {
+    return null;
+  }
+
+  const currentSession = allSessions[currentIndex];
 
   return (
-    <section className="w-full py-16 px-4">
+    <section className="w-full py-8 sm:py-12 md:py-16 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
-          className="mb-12"
+          className="mb-6 sm:mb-8 md:mb-12"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
           <div
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-base md:text-lg mb-6"
+            className="inline-flex items-center gap-2 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full font-bold text-xs sm:text-sm md:text-base mb-4 sm:mb-5 md:mb-6"
             style={{
               backgroundColor: "var(--color-secondary-brand, #f59e0b)20",
               color: "var(--color-secondary-brand, #f59e0b)",
             }}
           >
-            <Calendar className="w-5 h-5 md:w-6 md:h-6" />
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
             Prochains Événements
           </div>
           <h2
-            className="text-4xl md:text-5xl lg:text-6xl font-bold"
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold"
             style={{ color: "var(--color-brand, #16a34a)" }}
           >
             Ne manquez rien
           </h2>
         </motion.div>
 
-        <div className="grid lg:grid-cols-[1.5fr,1fr] gap-8 mb-12">
-          {/* Featured Event - Large Card */}
-          <motion.div
-            className="relative group"
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="relative h-[500px] lg:h-[600px] rounded-3xl overflow-hidden shadow-xl">
-              <Image
-                src={featuredEvent.image}
-                alt={featuredEvent.title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
-
-              {/* Content Overlay */}
-              <div className="absolute inset-0 p-8 flex flex-col justify-end text-white">
-                <div className="flex items-center gap-4 mb-4">
-                  <div
-                    className="px-4 py-2 rounded-full text-xs font-bold backdrop-blur-md"
-                    style={{
-                      backgroundColor: "var(--color-secondary-brand, #f59e0b)",
-                    }}
-                  >
-                    ÉVÉNEMENT À LA UNE
-                  </div>
-                  <div className="px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm">
-                    {featuredEvent.spots}
-                  </div>
-                </div>
-
-                <h3 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
-                  {featuredEvent.title}
-                </h3>
-                <p className="text-white/90 mb-6 text-sm md:text-base leading-relaxed max-w-xl">
-                  {featuredEvent.description}
-                </p>
-
-                <div className="flex flex-wrap gap-4 mb-6">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span className="text-sm font-semibold">
-                      {featuredEvent.day} {featuredEvent.month}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm">{featuredEvent.time}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-sm">{featuredEvent.location}</span>
-                  </div>
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleReservePlace(featuredEvent.title)}
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-full font-bold text-white shadow-lg transition-all duration-300 w-fit"
-                  style={{
-                    backgroundColor: "var(--color-brand, #16a34a)",
-                  }}
-                >
-                  Réserver ma place
-                  <ArrowRight className="w-5 h-5" />
-                </motion.button>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Upcoming Events - Timeline Style */}
-          <div className="space-y-4">
-            <motion.h3
-              className="text-2xl font-bold mb-6"
-              style={{ color: "var(--color-brand, #16a34a)" }}
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              Les prochaines formations débutantes
-            </motion.h3>
-
-            {upcomingEvents.map((event, index) => (
+        {/* Carousel Container */}
+        <div className="relative">
+          <div className="relative h-[450px] sm:h-[500px] md:h-[550px] lg:h-[600px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl">
+            <AnimatePresence mode="wait">
               <motion.div
-                key={index}
-                onClick={() => handleEventClick(event)}
-                className="group relative bg-white p-6 rounded-2xl border border-border/50 hover:border-primary/30 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ x: -4 }}
+                key={currentIndex}
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }}
+                transition={{ duration: 0.5 }}
+                className="absolute inset-0"
               >
-                <div className="flex gap-4">
-                  {/* Date Circle */}
-                  <div
-                    className="shrink-0 w-16 h-16 rounded-full flex flex-col items-center justify-center text-white shadow-md"
-                    style={{
-                      backgroundColor: "var(--color-brand, #16a34a)",
-                    }}
-                  >
-                    <div className="text-xl font-bold leading-none">
-                      {event.day}
-                    </div>
-                    <div className="text-[10px] font-semibold uppercase mt-0.5">
-                      {event.month}
-                    </div>
-                  </div>
+                <Image
+                  src={currentSession.formation.image}
+                  alt={currentSession.formation.title}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-                  {/* Content */}
-                  <div className="flex-1">
+                {/* Content Overlay */}
+                <div className="absolute inset-0 p-4 sm:p-6 md:p-8 flex flex-col justify-end text-white">
+                  <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4 flex-wrap">
                     <div
-                      className="inline-block px-2 py-1 rounded text-[10px] font-bold mb-2"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold backdrop-blur-md"
+                      style={{
+                        backgroundColor:
+                          currentSession.formation.type === "online"
+                            ? "var(--color-brand, #16a34a)"
+                            : "var(--color-secondary-brand, #f59e0b)",
+                      }}
+                    >
+                      {currentSession.formation.type === "online"
+                        ? "FORMATION EN LIGNE"
+                        : "FORMATION PRÉSENTIEL"}
+                    </div>
+                    {currentSession.session && (
+                      <div className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm">
+                        {currentSession.session.availableSpots} places restantes
+                      </div>
+                    )}
+                    {currentSession.formation.type === "online" && (
+                      <div className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm">
+                        DISPONIBLE MAINTENANT
+                      </div>
+                    )}
+                    <div
+                      className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold backdrop-blur-md"
                       style={{
                         backgroundColor:
                           "var(--color-secondary-brand, #f59e0b)20",
                         color: "var(--color-secondary-brand, #f59e0b)",
                       }}
                     >
-                      {event.category}
-                    </div>
-                    <h4 className="font-bold text-foreground group-hover:text-primary transition-colors mb-2">
-                      {event.title}
-                    </h4>
-                    <div className="space-y-1 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-3 h-3" />
-                        {event.time}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3 h-3" />
-                        {event.location}
-                      </div>
+                      {currentSession.formation.level.toUpperCase()}
                     </div>
                   </div>
 
-                  {/* Arrow */}
-                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0 self-center" />
+                  <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 leading-tight">
+                    {currentSession.formation.title}
+                  </h3>
+                  <p className="text-white/90 mb-4 sm:mb-5 md:mb-6 text-[11px] sm:text-xs md:text-sm leading-relaxed max-w-xl line-clamp-2 sm:line-clamp-3">
+                    {currentSession.formation.description}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-5 md:mb-6">
+                    {currentSession.session ? (
+                      <>
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span className="text-[11px] sm:text-xs font-semibold">
+                            {
+                              formatDateRange(
+                                currentSession.session.startDate,
+                                currentSession.session.endDate,
+                              ).day
+                            }{" "}
+                            {
+                              formatDateRange(
+                                currentSession.session.startDate,
+                                currentSession.session.endDate,
+                              ).month
+                            }
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span className="text-[11px] sm:text-xs">
+                            {currentSession.session.location}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span className="text-[11px] sm:text-xs">
+                            Accès illimité à vie
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() =>
+                        handleReservePlace(currentSession.formation.id)
+                      }
+                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-xs sm:text-sm text-white shadow-lg transition-all duration-300"
+                      style={{
+                        backgroundColor: "var(--color-brand, #16a34a)",
+                      }}
+                    >
+                      {currentSession.formation.type === "online"
+                        ? "Acheter maintenant"
+                        : "Réserver ma place"}
+                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </motion.button>
+
+                    <span className="text-white/80 text-xs sm:text-sm font-semibold">
+                      {currentSession.formation.price.toLocaleString("fr-FR")}{" "}
+                      FCFA
+                    </span>
+                  </div>
                 </div>
               </motion.div>
-            ))}
+            </AnimatePresence>
+
+            {/* Navigation Arrows */}
+            {allSessions.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevious}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all flex items-center justify-center text-white group"
+                  aria-label="Previous formation"
+                >
+                  <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all flex items-center justify-center text-white group"
+                  aria-label="Next formation"
+                >
+                  <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
+                </button>
+              </>
+            )}
           </div>
+
+          {/* Carousel Dots */}
+          {allSessions.length > 1 && (
+            <div className="flex justify-center gap-2 mt-4 sm:mt-5 md:mt-6">
+              {allSessions.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleDotClick(index)}
+                  className={`h-1.5 sm:h-2 rounded-full transition-all ${
+                    index === currentIndex
+                      ? "w-6 sm:w-8 bg-[var(--color-brand,#16a34a)]"
+                      : "w-1.5 sm:w-2 bg-gray-300 hover:bg-gray-400"
+                  }`}
+                  aria-label={`Go to formation ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

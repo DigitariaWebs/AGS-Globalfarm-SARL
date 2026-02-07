@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Sprout } from "lucide-react";
 
 export default function AProposPage() {
-  // Gallery images from the public folder - 15 images total
   const galleryImages = [
     "Drone.png",
     "Bags.png",
@@ -18,10 +17,6 @@ export default function AProposPage() {
     "TwoBlackPplTalking.png",
     "GreenHouse.png",
     "Tomato.png",
-    "BlackManWithBagsTwo.png",
-    "BlackManWithPlants.png",
-    "Drone.png",
-    "GreenHouse.png",
   ];
 
   // Pattern: Column 1: tall tall short | Column 2: short tall tall | Column 3: tall tall short | Column 4: tall short tall | Column 5: short tall tall

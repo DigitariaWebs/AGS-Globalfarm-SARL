@@ -193,12 +193,6 @@ export default function BoutiqueClientPage({
                         Nouveau
                       </span>
                     )}
-                    {product.organic && (
-                      <span className="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
-                        <Leaf className="w-3 h-3" />
-                        Bio
-                      </span>
-                    )}
                   </div>
 
                   {/* Product Info */}
@@ -206,7 +200,7 @@ export default function BoutiqueClientPage({
                     {/* Title and Category */}
                     <div className="mb-3">
                       <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-2 min-h-12">
-                        {product.name}
+                        {product.name.replace(/biologique/gi, "").trim()}
                       </h3>
                       <span className="inline-block text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                         {product.category}

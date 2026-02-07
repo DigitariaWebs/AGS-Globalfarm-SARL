@@ -10,37 +10,44 @@ import {
   Clock,
   Send,
   MessageCircle,
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
   CheckCircle2,
 } from "lucide-react";
+import {
+  FaTiktok,
+  FaInstagram,
+  FaFacebookF,
+  FaTwitter,
+  FaWhatsapp,
+} from "react-icons/fa";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const contactInfo = [
   {
     icon: Phone,
     title: "Téléphone",
-    details: ["78 138 38 38", "33 845 63 21"],
+    details: ["+221781383838 "],
     description: "Lun - Ven : 8h - 13h",
+    link: "tel:+221781383838",
   },
   {
     icon: Mail,
     title: "Email",
     details: ["contact@agsglobalfarm.com"],
     description: "Réponse sous 24h",
+    link: "mailto:contact@agsglobalfarm.com",
   },
   {
     icon: MapPin,
     title: "Adresse",
     details: ["Cité nouvel horizon, villa 642", "Keur Ndiaye LO, Dakar"],
     description: "Visitez-nous sur rendez-vous",
+    link: "https://www.google.com/maps/search/?api=1&query=Cité+nouvel+horizon+villa+642+Keur+Ndiaye+LO+Dakar",
   },
   {
     icon: Clock,
     title: "Horaires",
-    details: ["Lun - Ven : 8h00 - 17h00"],
+    details: ["Lun - Ven : 8h00 - 13h00"],
     description: "Fermé samedi et dimanche",
   },
 ];
@@ -48,27 +55,33 @@ const contactInfo = [
 const socialMedia = [
   {
     name: "Facebook",
-    icon: Facebook,
-    url: "#",
+    icon: FaFacebookF,
+    url: "https://www.facebook.com/share/1B2n3pZo2Q/?mibextid=wwXIfr",
     color: "#1877F2",
   },
   {
     name: "Instagram",
-    icon: Instagram,
-    url: "#",
+    icon: FaInstagram,
+    url: "https://www.instagram.com/agsglobalfarm?igsh=am12ZjdiejcxOGxy&utm_source=qr",
     color: "#E4405F",
   },
   {
-    name: "Twitter",
-    icon: Twitter,
-    url: "#",
+    name: "TikTok",
+    icon: FaTiktok,
+    url: "https://www.tiktok.com/@agsglobalfarm?_r=1&_t=ZS-93jOVOTImou",
+    color: "#000000",
+  },
+  {
+    name: "X (Twitter)",
+    icon: FaTwitter,
+    url: "https://x.com/agsglobalfarm?s=21",
     color: "#1DA1F2",
   },
   {
-    name: "LinkedIn",
-    icon: Linkedin,
-    url: "#",
-    color: "#0A66C2",
+    name: "WhatsApp",
+    icon: FaWhatsapp,
+    url: "https://wa.me/221781383838",
+    color: "#25D366",
   },
 ];
 
@@ -231,28 +244,30 @@ function ContactPageContent() {
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button
                   size="lg"
-                  className="text-white text-base font-semibold shadow-lg hover:shadow-xl transition-all"
-                  style={{
-                    backgroundColor: "var(--color-cta)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "var(--color-cta-hover)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "var(--color-cta)";
+                  className="text-white text-base font-semibold shadow-lg hover:shadow-xl transition-all bg-(--color-cta)"
+                  asChild
+                  onClick={() => {
+                    const contactForm = document.getElementById("contact-form");
+                    if (contactForm) {
+                      contactForm.scrollIntoView({ behavior: "smooth" });
+                    }
                   }}
                 >
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  Envoyer un Message
+                  <Link href="/contact#contact-form">
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    Envoyer un Message
+                  </Link>
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   className="bg-white/10 backdrop-blur-sm text-white border-white/30 hover:bg-white/20 text-base font-semibold"
+                  asChild
                 >
-                  <Phone className="w-5 h-5 mr-2" />
-                  +221 XXX XXX XXX
+                  <Link href="tel:+221781383838">
+                    <Phone className="w-5 h-5 mr-2" />
+                    +221781383838
+                  </Link>
                 </Button>
               </div>
             </motion.div>
@@ -287,41 +302,64 @@ function ContactPageContent() {
         ></div>
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {contactInfo.map((info, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all group"
-              >
-                <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
-                  style={{ backgroundColor: "var(--color-brand)" }}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr">
+            {contactInfo.map((info, index) => {
+              const content = (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all group h-full"
                 >
-                  <info.icon className="w-7 h-7 text-white" />
-                </div>
-                <h3 className="font-bold text-lg text-gray-900 mb-3">
-                  {info.title}
-                </h3>
-                <div className="space-y-1 mb-2">
-                  {info.details.map((detail, idx) => (
-                    <p key={idx} className="text-gray-700 font-medium text-sm">
-                      {detail}
-                    </p>
-                  ))}
-                </div>
-                <p className="text-gray-500 text-xs">{info.description}</p>
-              </motion.div>
-            ))}
+                  <div
+                    className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+                    style={{ backgroundColor: "var(--color-brand)" }}
+                  >
+                    <info.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-bold text-lg text-gray-900 mb-3">
+                    {info.title}
+                  </h3>
+                  <div className="space-y-1 mb-2">
+                    {info.details.map((detail, idx) => (
+                      <p
+                        key={idx}
+                        className="text-gray-700 font-medium text-sm"
+                      >
+                        {detail}
+                      </p>
+                    ))}
+                  </div>
+                  <p className="text-gray-500 text-xs">{info.description}</p>
+                </motion.div>
+              );
+
+              return info.link ? (
+                <a
+                  key={index}
+                  href={info.link}
+                  target={info.link.startsWith("http") ? "_blank" : undefined}
+                  rel={
+                    info.link.startsWith("http")
+                      ? "noopener noreferrer"
+                      : undefined
+                  }
+                  className="block"
+                >
+                  {content}
+                </a>
+              ) : (
+                content
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* Contact Form & Departments */}
-      <section className="py-16">
+      <section id="contact-form" className="py-16">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Contact Form */}

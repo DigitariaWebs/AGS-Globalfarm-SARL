@@ -151,7 +151,6 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Forgot Password */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <input
@@ -166,12 +165,6 @@ export default function LoginPage() {
                       Se souvenir de moi
                     </label>
                   </div>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-                  >
-                    Mot de passe oublié ?
-                  </Link>
                 </div>
 
                 {/* Submit Button */}

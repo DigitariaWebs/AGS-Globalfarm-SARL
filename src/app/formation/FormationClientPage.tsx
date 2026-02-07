@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   GraduationCap,
   Users,
@@ -69,6 +69,7 @@ export default function FormationClientPage({
   ownedFormationIds,
 }: FormationClientPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToCart } = useCart();
   const [activeCategory, setActiveCategory] = useState("Tout");
   const [modalProgram, setModalProgram] = useState<Formation | null>(null);
@@ -84,6 +85,57 @@ export default function FormationClientPage({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBackgroundColor(bodyBg);
   }, []);
+
+  // Handle URL parameters for automatic modal opening
+  useEffect(() => {
+    const modal = searchParams.get("modal");
+    const formationId = searchParams.get("id");
+    const sessionId = searchParams.get("sessionId");
+
+    if (modal === "reserve" && formationId) {
+      const formation = trainingPrograms.find(
+        (f) => f.id === parseInt(formationId),
+      );
+      if (formation) {
+        //eslint-disable-next-line
+        setModalProgram(formation);
+        setIsProgramExpanded(false);
+
+        // Handle session selection for presentiel formations
+        if (formation.type === "presentiel" && sessionId) {
+          const session = formation.sessions?.find(
+            (s) => s.id === parseInt(sessionId),
+          );
+          if (session && session.status === "open") {
+            setSelectedSessionId(session.id);
+          } else {
+            // Auto-select first open session if sessionId is invalid
+            const openSessions = formation.sessions?.filter(
+              (s) => s.status === "open",
+            );
+            if (openSessions && openSessions.length === 1) {
+              setSelectedSessionId(openSessions[0].id);
+            }
+          }
+        } else if (formation.type === "presentiel") {
+          // Auto-select first open session if no sessionId provided
+          const openSessions = formation.sessions?.filter(
+            (s) => s.status === "open",
+          );
+          if (openSessions && openSessions.length === 1) {
+            setSelectedSessionId(openSessions[0].id);
+          }
+        }
+
+        // Clean up URL parameters after opening modal
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("modal");
+        newUrl.searchParams.delete("id");
+        newUrl.searchParams.delete("sessionId");
+        window.history.replaceState({}, "", newUrl.toString());
+      }
+    }
+  }, [searchParams, trainingPrograms]);
 
   const handleEnroll = (program: Formation) => {
     // Check if user already owns this formation
@@ -316,19 +368,33 @@ export default function FormationClientPage({
 
           {/* Category Filter */}
           <div className="flex flex-wrap gap-3 justify-center mb-12">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                className={`px-6 py-2 rounded-full font-medium transition-all ${
-                  activeCategory === category
-                    ? "bg-green-600 text-white shadow-lg"
-                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+            {categories.map((category) => {
+              const isOnline = category === "En ligne";
+              const isPresentiel = category === "Présentiel";
+              const isActive = activeCategory === category;
+
+              return (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  className={`px-6 py-3 rounded-full font-semibold transition-all ${
+                    isActive
+                      ? isOnline
+                        ? "bg-green-600 text-white shadow-lg scale-105"
+                        : isPresentiel
+                          ? "bg-blue-600 text-white shadow-lg scale-105"
+                          : "bg-orange-500 text-white shadow-lg scale-105"
+                      : isOnline
+                        ? "bg-green-50 text-green-700 hover:bg-green-100 border-2 border-green-200"
+                        : isPresentiel
+                          ? "bg-blue-50 text-blue-700 hover:bg-blue-100 border-2 border-blue-200"
+                          : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200"
+                  }`}
+                >
+                  {category}
+                </button>
+              );
+            })}
           </div>
 
           {/* Programs Grid */}
@@ -354,8 +420,19 @@ export default function FormationClientPage({
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-300"
                       />
+                      {/* Formation Type Badge - Top Left */}
                       <div
-                        className="absolute top-3 left-3 text-white text-xs font-semibold px-3 py-1 rounded-full"
+                        className={`absolute top-3 left-3 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg ${
+                          program.type === "online"
+                            ? "bg-green-600"
+                            : "bg-blue-600"
+                        }`}
+                      >
+                        {program.type === "online" ? "EN LIGNE" : "PRÉSENTIEL"}
+                      </div>
+                      {/* Level Badge - Top Right */}
+                      <div
+                        className="absolute top-3 right-3 text-white text-xs font-semibold px-3 py-1 rounded-full"
                         style={{
                           backgroundColor: "var(--color-secondary-brand)",
                         }}
@@ -366,12 +443,23 @@ export default function FormationClientPage({
 
                     {/* Program Info */}
                     <div className="p-5 flex flex-col flex-1">
-                      {/* Category and Icon */}
-                      <div className="mb-2">
-                        <div className="flex items-center gap-2 mb-2">
+                      {/* Category and Type Badges */}
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <IconComponent className="w-4 h-4 text-green-600 shrink-0" />
                           <span className="inline-block text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                             {program.category}
+                          </span>
+                          <span
+                            className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${
+                              program.type === "online"
+                                ? "bg-green-100 text-green-700 border border-green-300"
+                                : "bg-blue-100 text-blue-700 border border-blue-300"
+                            }`}
+                          >
+                            {program.type === "online"
+                              ? "En ligne"
+                              : "Présentiel"}
                           </span>
                         </div>
                       </div>
@@ -389,15 +477,9 @@ export default function FormationClientPage({
                       </p>
 
                       {/* Meta Info */}
-                      <div className="grid grid-cols-3 gap-2 mb-3 text-xs text-gray-600">
+                      <div className="flex justify-between gap-2 mb-3 text-xs text-gray-600">
                         {program.type === "online" ? (
                           <>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4 text-green-600 shrink-0" />
-                              <span className="text-xs">
-                                {program.durationDays} jours
-                              </span>
-                            </div>
                             <div className="flex items-center gap-1">
                               <BookOpen className="w-4 h-4 text-green-600 shrink-0" />
                               <span className="text-xs">
@@ -453,7 +535,9 @@ export default function FormationClientPage({
                                   (session) => session.status === "open",
                                 ))
                                 ? "bg-gray-400 cursor-not-allowed"
-                                : "bg-green-600 hover:bg-green-700"
+                                : program.type === "online"
+                                  ? "bg-green-600 hover:bg-green-700"
+                                  : "bg-blue-600 hover:bg-blue-700"
                             } text-white`}
                             disabled={
                               ownedFormationIds.includes(program.id) ||
@@ -562,15 +646,15 @@ export default function FormationClientPage({
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
               onClick={closeModal}
             >
               <motion.div
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+                className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-sm sm:max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
               >
                 {/* Modal Header */}
-                <div className="relative h-64 bg-green-50 overflow-hidden">
+                <div className="relative h-40 sm:h-48 md:h-56 bg-green-50 overflow-hidden shrink-0">
                   <Image
                     src={modalProgram.image}
                     alt={modalProgram.title}
@@ -580,23 +664,25 @@ export default function FormationClientPage({
                   <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                   <button
                     onClick={closeModal}
-                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-all hover:scale-110"
+                    className="absolute top-2 right-2 sm:top-4 sm:right-4 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-all hover:scale-110"
                   >
-                    <X className="w-5 h-5 text-gray-700" />
+                    <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
                   </button>
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4">
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 flex-wrap">
                       {(() => {
                         const IconComponent =
                           iconMap[modalProgram.icon as keyof typeof iconMap] ||
                           Leaf;
-                        return <IconComponent className="w-5 h-5 text-white" />;
+                        return (
+                          <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                        );
                       })()}
-                      <span className="text-xs text-white/90 bg-white/20 backdrop-blur-sm px-2 py-1 rounded">
+                      <span className="text-[10px] sm:text-xs text-white/90 bg-white/20 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                         {modalProgram.category}
                       </span>
                       <span
-                        className="text-xs text-white bg-white/20 backdrop-blur-sm px-2 py-1 rounded"
+                        className="text-[10px] sm:text-xs text-white bg-white/20 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded"
                         style={{
                           backgroundColor: "var(--color-secondary-brand)",
                         }}
@@ -604,79 +690,79 @@ export default function FormationClientPage({
                         {modalProgram.level}
                       </span>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 sm:mb-2">
                       {modalProgram.title}
                     </h2>
                   </div>
                 </div>
 
                 {/* Modal Content */}
-                <div className="p-6 overflow-y-auto flex-1">
-                  <p className="text-gray-600 mb-6">
+                <div className="p-3 sm:p-4 md:p-6 overflow-y-auto flex-1 min-h-0">
+                  <p className="text-gray-600 mb-3 sm:mb-4 md:mb-5 text-xs sm:text-sm md:text-base">
                     {modalProgram.description}
                   </p>
 
                   {/* Program Info Grid */}
-                  <div className="grid grid-cols-4 gap-3 mb-6 p-6 bg-linear-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-100">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-5 p-2 sm:p-3 md:p-4 bg-linear-to-r from-green-50 to-emerald-50 rounded-lg sm:rounded-xl border border-green-100">
                     {modalProgram.type === "online" ? (
                       <>
-                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
-                          <Clock className="w-6 h-6 text-green-600 mx-auto mb-3" />
-                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                        <div className="text-center bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-sm border border-green-200">
+                          <Clock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600 mx-auto mb-1 sm:mb-2" />
+                          <p className="text-[9px] sm:text-[10px] md:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">
                             Durée
                           </p>
-                          <p className="font-bold text-gray-900 text-lg">
+                          <p className="font-bold text-gray-900 text-sm sm:text-base md:text-lg">
                             {modalProgram.durationDays} jours
                           </p>
                         </div>
-                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
-                          <BookOpen className="w-6 h-6 text-green-600 mx-auto mb-3" />
-                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                        <div className="text-center bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-sm border border-green-200">
+                          <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600 mx-auto mb-1 sm:mb-2" />
+                          <p className="text-[9px] sm:text-[10px] md:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">
                             Sections
                           </p>
-                          <p className="font-bold text-gray-900 text-lg">
+                          <p className="font-bold text-gray-900 text-sm sm:text-base md:text-lg">
                             {modalProgram.sections?.length || 0}
                           </p>
                         </div>
-                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
-                          <Users className="w-6 h-6 text-green-600 mx-auto mb-3" />
-                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                        <div className="text-center bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-sm border border-green-200">
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600 mx-auto mb-1 sm:mb-2" />
+                          <p className="text-[9px] sm:text-[10px] md:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">
                             Participants
                           </p>
-                          <p className="font-bold text-gray-900 text-lg">
+                          <p className="font-bold text-gray-900 text-sm sm:text-base md:text-lg">
                             {modalProgram.participants}
                           </p>
                         </div>
                       </>
                     ) : (
                       <>
-                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
-                          <Calendar className="w-6 h-6 text-green-600 mx-auto mb-3" />
-                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
-                            Sessions disponibles
+                        <div className="text-center bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-sm border border-green-200">
+                          <Calendar className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600 mx-auto mb-1 sm:mb-2" />
+                          <p className="text-[9px] sm:text-[10px] md:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">
+                            Sessions
                           </p>
-                          <p className="font-bold text-gray-900 text-sm leading-tight">
+                          <p className="font-bold text-gray-900 text-xs sm:text-sm md:text-base leading-tight">
                             {modalProgram.sessions?.filter(
                               (s) => s.status === "open",
                             ).length || 0}{" "}
                             session(s)
                           </p>
                         </div>
-                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
-                          <MapPin className="w-6 h-6 text-green-600 mx-auto mb-3" />
-                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                        <div className="text-center bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-sm border border-green-200">
+                          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600 mx-auto mb-1 sm:mb-2" />
+                          <p className="text-[9px] sm:text-[10px] md:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">
                             Lieu
                           </p>
-                          <p className="font-bold text-gray-900 text-sm leading-tight">
+                          <p className="font-bold text-gray-900 text-xs sm:text-sm md:text-base leading-tight">
                             {modalProgram.address}
                           </p>
                         </div>
-                        <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
-                          <Users className="w-6 h-6 text-green-600 mx-auto mb-3" />
-                          <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
-                            Places par session
+                        <div className="text-center bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-sm border border-green-200">
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600 mx-auto mb-1 sm:mb-2" />
+                          <p className="text-[9px] sm:text-[10px] md:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">
+                            Places
                           </p>
-                          <p className="font-bold text-gray-900 text-lg">
+                          <p className="font-bold text-gray-900 text-sm sm:text-base md:text-lg">
                             {modalProgram.sessions?.find(
                               (s) => s.id === selectedSessionId,
                             )?.availableSpots ||
@@ -686,12 +772,12 @@ export default function FormationClientPage({
                         </div>
                       </>
                     )}
-                    <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-green-200">
-                      <Award className="w-6 h-6 text-green-600 mx-auto mb-3" />
-                      <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                    <div className="text-center bg-white p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-sm border border-green-200">
+                      <Award className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600 mx-auto mb-1 sm:mb-2" />
+                      <p className="text-[9px] sm:text-[10px] md:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">
                         Prix
                       </p>
-                      <p className="font-bold text-green-600 text-lg">
+                      <p className="font-bold text-green-600 text-sm sm:text-base md:text-lg">
                         {modalProgram.price.toLocaleString()} FCFA
                       </p>
                     </div>
@@ -701,10 +787,10 @@ export default function FormationClientPage({
                   <div>
                     {modalProgram.type === "online" ? (
                       <>
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">
+                        <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-2 sm:mb-3">
                           Structure de la Formation
                         </h3>
-                        <p className="text-gray-600 mb-4">
+                        <p className="text-gray-600 mb-2 sm:mb-3 text-xs sm:text-sm md:text-base">
                           Cette formation comprend{" "}
                           {modalProgram.sections?.length || 0} sections pour un
                           total de{" "}
@@ -715,26 +801,26 @@ export default function FormationClientPage({
                           leçons.
                         </p>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                           {modalProgram.sections?.map((section, sIdx) => (
                             <div
                               key={section.id}
-                              className="p-3 bg-gray-50 rounded-lg"
+                              className="p-2 sm:p-3 bg-gray-50 rounded-lg"
                             >
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className="font-semibold text-gray-900">
+                              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                                <h4 className="font-semibold text-gray-900 text-xs sm:text-sm">
                                   {section.title}
                                 </h4>
-                                <span className="text-xs text-gray-500">
+                                <span className="text-[10px] sm:text-xs text-gray-500">
                                   {section.lessons.length} leçons
                                 </span>
                               </div>
                               {sIdx === 0 && (
-                                <ul className="grid gap-2">
+                                <ul className="grid gap-1.5 sm:gap-2">
                                   {section.lessons.map((lesson) => (
                                     <li
                                       key={lesson.id}
-                                      className="p-2 bg-white rounded-md border border-gray-100 text-sm text-gray-700"
+                                      className="p-1.5 sm:p-2 bg-white rounded-md border border-gray-100 text-xs sm:text-sm text-gray-700"
                                     >
                                       {lesson.title}
                                     </li>
@@ -748,12 +834,12 @@ export default function FormationClientPage({
                     ) : (
                       <>
                         {/* Sessions - Main focus */}
-                        <div className="space-y-4 mb-6">
-                          <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-green-600" />
+                        <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+                          <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
+                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                             Sélectionnez votre session
                           </h3>
-                          <p className="text-gray-600 text-sm mb-4">
+                          <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4">
                             Choisissez la période qui vous convient parmi les{" "}
                             {modalProgram.sessions?.filter(
                               (s) => s.status === "open",
@@ -777,19 +863,19 @@ export default function FormationClientPage({
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.99 }}
                               >
-                                <div className="p-4">
-                                  <div className="flex items-start gap-4">
+                                <div className="p-3 sm:p-4">
+                                  <div className="flex items-start gap-3 sm:gap-4">
                                     {/* Radio Button */}
-                                    <div className="shrink-0 mt-1">
+                                    <div className="shrink-0 mt-0.5 sm:mt-1">
                                       <div
-                                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                                           selectedSessionId === session.id
                                             ? "border-green-600 bg-green-600"
                                             : "border-gray-300 bg-white"
                                         }`}
                                       >
                                         {selectedSessionId === session.id && (
-                                          <div className="w-3 h-3 bg-white rounded-full"></div>
+                                          <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full"></div>
                                         )}
                                       </div>
                                     </div>
@@ -797,20 +883,20 @@ export default function FormationClientPage({
                                     {/* Session Content */}
                                     <div className="flex-1 min-w-0">
                                       {/* Session Title */}
-                                      <div className="flex items-center gap-2 mb-3">
+                                      <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
                                         <div
-                                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                          className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
                                             selectedSessionId === session.id
                                               ? "bg-green-600"
                                               : "bg-gray-400"
                                           }`}
                                         >
-                                          <span className="text-white text-sm font-bold">
+                                          <span className="text-white text-xs sm:text-sm font-bold">
                                             {session.id}
                                           </span>
                                         </div>
                                         <h4
-                                          className={`font-bold text-lg ${
+                                          className={`font-bold text-base sm:text-lg ${
                                             selectedSessionId === session.id
                                               ? "text-green-700"
                                               : "text-gray-900"
@@ -822,26 +908,26 @@ export default function FormationClientPage({
 
                                       {/* Dates - Highlighted */}
                                       <div
-                                        className={`mb-3 p-3 rounded-lg ${
+                                        className={`mb-2 sm:mb-3 p-2 sm:p-3 rounded-lg ${
                                           selectedSessionId === session.id
                                             ? "bg-green-100"
                                             : "bg-gray-100"
                                         }`}
                                       >
-                                        <div className="flex items-center gap-2 mb-1">
+                                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
                                           <Calendar
-                                            className={`w-5 h-5 ${
+                                            className={`w-4 h-4 sm:w-5 sm:h-5 ${
                                               selectedSessionId === session.id
                                                 ? "text-green-700"
                                                 : "text-gray-600"
                                             }`}
                                           />
-                                          <span className="text-xs font-medium text-gray-600 uppercase">
+                                          <span className="text-[10px] sm:text-xs font-medium text-gray-600 uppercase">
                                             Dates de formation
                                           </span>
                                         </div>
                                         <div
-                                          className={`text-lg font-bold ${
+                                          className={`text-sm sm:text-base md:text-lg font-bold ${
                                             selectedSessionId === session.id
                                               ? "text-green-700"
                                               : "text-gray-900"
@@ -857,11 +943,11 @@ export default function FormationClientPage({
                                               })
                                             : ""}
                                         </div>
-                                        <div className="text-sm text-gray-600 my-1">
+                                        <div className="text-xs sm:text-sm text-gray-600 my-0.5 sm:my-1">
                                           au
                                         </div>
                                         <div
-                                          className={`text-lg font-bold ${
+                                          className={`text-sm sm:text-base md:text-lg font-bold ${
                                             selectedSessionId === session.id
                                               ? "text-green-700"
                                               : "text-gray-900"
@@ -877,16 +963,16 @@ export default function FormationClientPage({
                                               })
                                             : ""}
                                         </div>
-                                        <div className="text-sm text-gray-600 mt-2">
+                                        <div className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2">
                                           ({modalProgram.durationDays} jours •
                                           08:00 - 17:00)
                                         </div>
                                       </div>
 
                                       {/* Location and Spots */}
-                                      <div className="flex items-center gap-4 text-sm">
+                                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm">
                                         <div className="flex items-center gap-1 text-gray-600">
-                                          <MapPin className="w-4 h-4" />
+                                          <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                           <span>{session.location}</span>
                                         </div>
                                         <div
@@ -912,16 +998,16 @@ export default function FormationClientPage({
 
                         {/* Collapsible Program */}
                         {modalProgram.program && (
-                          <div className="mb-6">
+                          <div className="mb-4 sm:mb-6">
                             <button
                               onClick={() =>
                                 setIsProgramExpanded(!isProgramExpanded)
                               }
-                              className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+                              className="w-full flex items-center justify-between p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
                             >
-                              <div className="flex items-center gap-2">
-                                <BookOpen className="w-5 h-5 text-green-600" />
-                                <h4 className="font-semibold text-gray-900">
+                              <div className="flex items-center gap-1.5 sm:gap-2">
+                                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                                <h4 className="font-semibold text-gray-900 text-xs sm:text-sm md:text-base">
                                   Programme détaillé (
                                   {modalProgram.durationDays} jours)
                                 </h4>
@@ -932,7 +1018,7 @@ export default function FormationClientPage({
                                 }}
                                 transition={{ duration: 0.2 }}
                               >
-                                <ArrowRight className="w-5 h-5 text-gray-600 transform rotate-90" />
+                                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 transform rotate-90" />
                               </motion.div>
                             </button>
 
@@ -945,45 +1031,45 @@ export default function FormationClientPage({
                                   transition={{ duration: 0.3 }}
                                   className="overflow-hidden"
                                 >
-                                  <div className="mt-3 space-y-3">
+                                  <div className="mt-2 sm:mt-3 space-y-2 sm:space-y-3">
                                     {modalProgram.program.map((day, dayIdx) => (
                                       <div
                                         key={dayIdx}
-                                        className="bg-gray-50 rounded-lg p-4 border-l-4 border-green-500"
+                                        className="bg-gray-50 rounded-lg p-3 sm:p-4 border-l-4 border-green-500"
                                       >
-                                        <div className="flex items-center gap-2 mb-3">
-                                          <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
-                                            <span className="text-white text-xs font-bold">
+                                        <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                                          <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-600 rounded-full flex items-center justify-center">
+                                            <span className="text-white text-[10px] sm:text-xs font-bold">
                                               {dayIdx + 1}
                                             </span>
                                           </div>
-                                          <h5 className="font-semibold text-gray-900">
+                                          <h5 className="font-semibold text-gray-900 text-xs sm:text-sm">
                                             {day.name}
                                           </h5>
                                         </div>
 
-                                        <div className="space-y-2 ml-8">
+                                        <div className="space-y-1.5 sm:space-y-2 ml-6 sm:ml-8">
                                           {day.timeFrames.map(
                                             (timeFrame, tfIdx) => (
                                               <div
                                                 key={tfIdx}
-                                                className="flex items-start gap-3 p-2 bg-white rounded-md border border-gray-100"
+                                                className="flex items-start gap-2 sm:gap-3 p-1.5 sm:p-2 bg-white rounded-md border border-gray-100"
                                               >
                                                 <div className="shrink-0 mt-0.5">
-                                                  <Clock className="w-4 h-4 text-green-600" />
+                                                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                  <div className="flex items-center gap-2 mb-1">
-                                                    <span className="text-sm font-medium text-gray-900">
+                                                  <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                                                    <span className="text-xs sm:text-sm font-medium text-gray-900">
                                                       {timeFrame.from} -{" "}
                                                       {timeFrame.to}
                                                     </span>
-                                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                                                    <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded">
                                                       {timeFrame.name}
                                                     </span>
                                                   </div>
                                                   {timeFrame.description && (
-                                                    <p className="text-sm text-gray-600">
+                                                    <p className="text-xs sm:text-sm text-gray-600">
                                                       {timeFrame.description}
                                                     </p>
                                                   )}
@@ -1006,34 +1092,36 @@ export default function FormationClientPage({
                 </div>
 
                 {/* Modal Footer */}
-                <div className="border-t bg-linear-to-r from-gray-50 to-green-50">
+                <div className="border-t bg-linear-to-r from-gray-50 to-green-50 shrink-0">
                   {modalProgram.type === "presentiel" && (
-                    <div className="px-6 pt-4 pb-2">
-                      <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
+                    <div className="px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 pb-1.5 sm:pb-2">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                         <div className="flex items-center gap-1">
-                          <Phone className="w-4 h-4 text-green-600" />
-                          <span className="font-medium">
+                          <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                          <span className="font-medium text-xs sm:text-sm">
                             {modalProgram.contactPhone}
                           </span>
                         </div>
-                        <div className="w-px h-4 bg-gray-300"></div>
+                        <div className="hidden sm:block w-px h-4 bg-gray-300"></div>
                         <div className="flex items-center gap-1">
-                          <Award className="w-4 h-4 text-green-600" />
-                          <span>{modalProgram.contactEmail}</span>
+                          <Award className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                          <span className="text-xs sm:text-sm">
+                            {modalProgram.contactEmail}
+                          </span>
                         </div>
                       </div>
-                      <p className="text-center text-xs text-gray-500 mt-2">
+                      <p className="text-center text-[10px] sm:text-xs text-gray-500 mt-1.5 sm:mt-2">
                         Contactez-nous pour plus d&apos;informations ou pour
                         vous inscrire
                       </p>
                     </div>
                   )}
-                  <div className="p-6">
-                    <div className="flex gap-3">
+                  <div className="p-3 sm:p-4 md:p-6">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                       <Button
                         onClick={closeModal}
                         variant="outline"
-                        className="flex-1 border-gray-300 hover:bg-gray-50"
+                        className="flex-1 border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
                       >
                         Fermer
                       </Button>
@@ -1062,7 +1150,7 @@ export default function FormationClientPage({
                               (session) => session.status === "open",
                             ))
                         }
-                        className={`flex-1 shadow-lg hover:shadow-xl transition-all ${
+                        className={`flex-1 shadow-lg hover:shadow-xl transition-all text-xs sm:text-sm ${
                           ownedFormationIds.includes(modalProgram.id) ||
                           (modalProgram.type === "presentiel" &&
                             !modalProgram.sessions?.some(
@@ -1085,7 +1173,7 @@ export default function FormationClientPage({
                           !modalProgram.sessions?.some(
                             (session) => session.status === "open",
                           )) ? null : (
-                          <ArrowRight className="w-4 h-4 ml-2" />
+                          <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
                         )}
                       </Button>
                     </div>
