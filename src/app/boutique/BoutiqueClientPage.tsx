@@ -3,7 +3,7 @@
 import { useState, useLayoutEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Star, Sprout, Plus, Leaf } from "lucide-react";
+import { Search, Star, Sprout, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import type { Product } from "@/types";

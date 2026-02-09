@@ -4,8 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   FaTiktok,
-  FaFacebook,
-  FaLinkedin,
   FaFacebookF,
   FaInstagram,
   FaTwitter,

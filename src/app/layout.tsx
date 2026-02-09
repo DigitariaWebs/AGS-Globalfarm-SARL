@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConditionalLayout from "@/components/layout/ConditionalLayout";
 import Cart from "@/components/Cart";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -36,6 +37,7 @@ export default function RootLayout({
           <CartProvider>
             <ConditionalLayout>{children}</ConditionalLayout>
             <Cart />
+            <WhatsAppButton />
           </CartProvider>
         </AuthProvider>
       </body>

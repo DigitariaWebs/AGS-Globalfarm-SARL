@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
-  Clock,
   ArrowRight,
   Calendar,
   ChevronLeft,
@@ -94,20 +93,6 @@ export default function EventsSection({
     const endDay = end.getDate();
     const month = start.toLocaleDateString("fr-FR", { month: "short" });
     return { day: `${startDay}-${endDay}`, month };
-  };
-
-  const formatTime = (startDate: Date, endDate: Date) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const startTime = start.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    const endTime = end.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    return `${startTime} - ${endTime}`;
   };
 
   if (allSessions.length === 0) {
