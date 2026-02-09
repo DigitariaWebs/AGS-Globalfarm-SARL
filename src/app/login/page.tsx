@@ -34,11 +34,16 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await authClient.signIn.email({
+      const { error } = await authClient.signIn.email({
         email: formData.email,
         password: formData.password,
       });
-      router.push(redirectTo);
+
+      if (error) {
+        setError(error.message || "Email ou mot de passe incorrect");
+      } else {
+        router.push(redirectTo);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur de connexion");
     } finally {
@@ -165,6 +170,12 @@ export default function LoginPage() {
                       Se souvenir de moi
                     </label>
                   </div>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                  >
+                    Mot de passe oublié ?
+                  </Link>
                 </div>
 
                 {/* Submit Button */}

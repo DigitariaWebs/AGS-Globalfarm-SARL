@@ -34,7 +34,9 @@ export default function ConditionalLayout({
 }) {
   const pathname = usePathname();
   const hideLayout =
-    pathname?.startsWith("/login") || pathname?.startsWith("/register");
+    pathname?.startsWith("/login") ||
+    pathname?.startsWith("/register") ||
+    pathname?.startsWith("/forgot-password");
 
   return (
     <>
