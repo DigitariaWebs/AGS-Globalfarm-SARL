@@ -17,31 +17,20 @@ if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
   console.error("See docs/QUICKSTART.md for setup instructions");
 }
 
-// Create reusable transporter with connection pooling and timeout settings
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.EMAIL_PORT || "587"),
-  secure: process.env.EMAIL_PORT === "465", // true for 465, false for other ports
-  auth:
-    process.env.EMAIL_USER && process.env.EMAIL_PASSWORD
-      ? {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD,
-        }
-      : undefined,
-  pool: true, // Use connection pooling
-  maxConnections: 1, // Limit concurrent connections for serverless
-  maxMessages: 3, // Max messages per connection before reconnecting
-  rateDelta: 1000, // Time window for rate limiting (1 second)
-  rateLimit: 5, // Max messages per rateDelta
-  socketTimeout: 30000, // 30 seconds socket timeout
-  greetingTimeout: 10000, // 10 seconds greeting timeout
-  connectionTimeout: 10000, // 10 seconds connection timeout
-  tls: {
-    rejectUnauthorized: true,
-    minVersion: "TLSv1.2",
-  },
-});
+/**
+ * Create a fresh transporter for each email (prevents stale connections in serverless)
+ */
+function createTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.EMAIL_PORT || "587"),
+    secure: process.env.EMAIL_PORT === "465",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+}
 
 /**
  * Send email using React component template
@@ -68,76 +57,46 @@ EMAIL_PASSWORD=your-16-char-app-password
     throw new Error("Email credentials not configured. Check .env.local file.");
   }
 
-  // Retry logic for connection issues
-  const maxRetries = 3;
-  let lastError: Error | null = null;
+  try {
+    // Render React component to HTML
+    const html = await render(template);
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      // Render React component to HTML
-      const html = await render(template);
+    // Create fresh transporter for this email
+    const transporter = createTransporter();
 
-      // Send email
-      const info = await transporter.sendMail({
-        from: `"${process.env.EMAIL_FROM_NAME || "AGS Globalfarm SARL"}" <${
-          process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER
-        }>`,
-        to,
-        subject,
-        html,
-      });
+    // Send email
+    const info = await transporter.sendMail({
+      from: `"${process.env.EMAIL_FROM_NAME || "AGS Globalfarm SARL"}" <${
+        process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER
+      }>`,
+      to,
+      subject,
+      html,
+    });
 
-      console.log("✅ Email sent successfully:", info.messageId);
-      return { success: true, messageId: info.messageId };
-    } catch (error) {
-      lastError = error as Error;
-      console.error(
-        `❌ Error sending email (attempt ${attempt}/${maxRetries}):`,
-        error,
-      );
+    console.log("✅ Email sent successfully:", info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error("❌ Error sending email:", error);
 
-      // Provide helpful error messages
-      if (error instanceof Error) {
-        if (error.message.includes("Missing credentials")) {
-          console.error(
-            "\n💡 Tip: Check that EMAIL_USER and EMAIL_PASSWORD are set in .env.local",
-          );
-          throw error; // Don't retry for configuration issues
-        } else if (error.message.includes("Invalid login")) {
-          console.error(
-            "\n💡 Tip: For Gmail, use an App Password, not your account password",
-          );
-          console.error(
-            "   Generate one at: https://myaccount.google.com/apppasswords",
-          );
-          throw error; // Don't retry for auth issues
-        } else if (
-          error.message.includes("ECONNECTION") ||
-          error.message.includes("Connection closed") ||
-          error.message.includes("ETIMEDOUT") ||
-          error.message.includes("ECONNRESET")
-        ) {
-          // Connection issues - retry with exponential backoff
-          if (attempt < maxRetries) {
-            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-            console.log(`⏳ Retrying in ${delay}ms...`);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-
-            // Close and recreate connection for next attempt
-            transporter.close();
-            continue;
-          }
-        }
-      }
-
-      // If last attempt, throw the error
-      if (attempt === maxRetries) {
-        throw lastError;
+    // Provide helpful error messages
+    if (error instanceof Error) {
+      if (error.message.includes("Missing credentials")) {
+        console.error(
+          "\n💡 Tip: Check that EMAIL_USER and EMAIL_PASSWORD are set in .env.local",
+        );
+      } else if (error.message.includes("Invalid login")) {
+        console.error(
+          "\n💡 Tip: For Gmail, use an App Password, not your account password",
+        );
+        console.error(
+          "   Generate one at: https://myaccount.google.com/apppasswords",
+        );
       }
     }
-  }
 
-  throw lastError || new Error("Failed to send email after retries");
+    throw error;
+  }
 }
 
 /**
@@ -145,11 +104,12 @@ EMAIL_PASSWORD=your-16-char-app-password
  */
 export async function verifyEmailConfig() {
   try {
+    const transporter = createTransporter();
     await transporter.verify();
-    console.log("Email server is ready to send emails");
+    console.log("✅ Email server is ready to send emails");
     return true;
   } catch (error) {
-    console.error("Email server verification failed:", error);
+    console.error("❌ Email server verification failed:", error);
     return false;
   }
 }
