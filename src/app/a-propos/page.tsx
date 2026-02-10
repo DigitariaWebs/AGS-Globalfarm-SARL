@@ -7,16 +7,16 @@ import { Sprout } from "lucide-react";
 export default function AProposPage() {
   const galleryImages = [
     "Drone.png",
-    "Bags.png",
+    "Pepers.jpeg",
     "BlackManExplainingTwo.png",
-    "GreenHouseTwo.png",
-    "AnotherDrone.png",
+    "Pickles2.jpeg",
     "BlackManWithBags.png",
     "Pickles.png",
     "BlackManExplaining.png",
     "TwoBlackPplTalking.png",
-    "GreenHouse.png",
     "Tomato.png",
+    "TomatoManSmile.jpeg",
+    "AnotherDrone.png",
   ];
 
   // Pattern: Column 1: tall tall short | Column 2: short tall tall | Column 3: tall tall short | Column 4: tall short tall | Column 5: short tall tall
