@@ -10,7 +10,7 @@ const mongoClient = new MongoClient(
 
 export const auth = betterAuth({
   database: mongodbAdapter(mongoClient.db()),
-  baseUrl: process.env.BETTER_AUTH_BASE_URL || "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_BASE_URL || "http://localhost:3000",
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
@@ -23,16 +23,15 @@ export const auth = betterAuth({
         ? `${userRecord.firstName} ${userRecord.lastName || ""}`.trim()
         : user.email;
 
-      // Send password reset email (don't await to prevent timing attacks)
-      void sendEmail({
+      // Await the email sending to get actual status
+      // This allows the client to know if the email was actually sent
+      await sendEmail({
         to: user.email,
         subject: "Réinitialisation de votre mot de passe - AGS Globalfarm",
         template: PasswordResetEmail({
           userName,
           resetUrl: url,
         }),
-      }).catch((error) => {
-        console.error("Failed to send password reset email:", error);
       });
     },
   },

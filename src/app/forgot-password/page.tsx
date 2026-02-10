@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -12,9 +12,12 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
+
+const COOLDOWN_SECONDS = 60;
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -27,6 +30,10 @@ export default function ForgotPasswordPage() {
   // Request mode state
   const [email, setEmail] = useState("");
   const [requestSuccess, setRequestSuccess] = useState(false);
+  const [emailActuallySent, setEmailActuallySent] = useState(false);
+
+  // Cooldown state
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
   // Reset mode state
   const [password, setPassword] = useState("");
@@ -39,6 +46,23 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Cooldown timer effect
+  useEffect(() => {
+    if (cooldownRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setCooldownRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cooldownRemaining]);
+
   useEffect(() => {
     // Validate token presence for reset mode
     if (mode === "reset" && !token) {
@@ -46,27 +70,51 @@ export default function ForgotPasswordPage() {
     }
   }, [mode, token]);
 
-  const handleRequestSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const sendPasswordResetRequest = useCallback(async (emailAddress: string) => {
     setError("");
     setIsLoading(true);
 
     try {
-      const { error } = await authClient.requestPasswordReset({
-        email,
-        redirectTo: "/forgot-password",
+      const response = await fetch("/api/auth/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailAddress }),
       });
 
-      if (error) {
-        setError(error.message || "Une erreur est survenue");
-      } else {
-        setRequestSuccess(true);
+      const data = await response.json();
+
+      if (data.cooldown) {
+        setCooldownRemaining(data.timeRemaining);
+        setError(data.error);
+        return false;
       }
+
+      if (!data.success) {
+        setError(data.error || "Une erreur est survenue");
+        return false;
+      }
+
+      setEmailActuallySent(data.emailSent);
+      setRequestSuccess(true);
+      setCooldownRemaining(COOLDOWN_SECONDS);
+      return true;
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
+      return false;
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendPasswordResetRequest(email);
+  };
+
+  const handleResendEmail = async () => {
+    if (cooldownRemaining > 0) return;
+    setRequestSuccess(false);
+    await sendPasswordResetRequest(email);
   };
 
   const handleResetSubmit = async (e: React.FormEvent) => {
@@ -94,7 +142,7 @@ export default function ForgotPasswordPage() {
     try {
       const { error } = await authClient.resetPassword({
         newPassword: password,
-        token,
+        token: token!,
       });
 
       if (error) {
@@ -230,20 +278,38 @@ export default function ForgotPasswordPage() {
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ type: "spring", duration: 0.5 }}
-                          className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                          className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                            emailActuallySent ? "bg-green-100" : "bg-yellow-100"
+                          }`}
                         >
-                          <CheckCircle className="w-8 h-8 text-green-600" />
+                          {emailActuallySent ? (
+                            <CheckCircle className="w-8 h-8 text-green-600" />
+                          ) : (
+                            <Mail className="w-8 h-8 text-yellow-600" />
+                          )}
                         </motion.div>
 
                         <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                          Email envoyé !
+                          {emailActuallySent
+                            ? "Email envoyé avec succès !"
+                            : "Demande traitée"}
                         </h2>
 
                         <p className="text-gray-600 mb-6">
-                          Si un compte existe avec l&apos;adresse{" "}
-                          <strong>{email}</strong>, vous recevrez un email avec
-                          les instructions pour réinitialiser votre mot de
-                          passe.
+                          {emailActuallySent ? (
+                            <>
+                              Un email de réinitialisation a été envoyé à{" "}
+                              <strong>{email}</strong>. Vérifiez votre boîte de
+                              réception.
+                            </>
+                          ) : (
+                            <>
+                              Si un compte existe avec l&apos;adresse{" "}
+                              <strong>{email}</strong>, vous recevrez un email
+                              avec les instructions pour réinitialiser votre mot
+                              de passe.
+                            </>
+                          )}
                         </p>
 
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -254,11 +320,38 @@ export default function ForgotPasswordPage() {
                           </p>
                         </div>
 
-                        <Link href="/login">
-                          <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3">
-                            Retour à la connexion
+                        {/* Resend Email Button */}
+                        <div className="space-y-3">
+                          <Button
+                            onClick={handleResendEmail}
+                            disabled={cooldownRemaining > 0 || isLoading}
+                            variant="outline"
+                            className="w-full border-emerald-600 text-emerald-600 hover:bg-emerald-50 py-3"
+                          >
+                            {isLoading ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mr-2" />
+                                Envoi en cours...
+                              </>
+                            ) : cooldownRemaining > 0 ? (
+                              <>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Renvoyer l&apos;email ({cooldownRemaining}s)
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Renvoyer l&apos;email
+                              </>
+                            )}
                           </Button>
-                        </Link>
+
+                          <Link href="/login">
+                            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3">
+                              Retour à la connexion
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </>
                   )}
