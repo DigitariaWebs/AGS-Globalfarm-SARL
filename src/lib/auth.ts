@@ -10,6 +10,7 @@ const mongoClient = new MongoClient(
 
 export const auth = betterAuth({
   database: mongodbAdapter(mongoClient.db()),
+  baseUrl: process.env.BETTER_AUTH_BASE_URL || "http://localhost:3000",
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
