@@ -26,19 +26,39 @@ export default function EventsSection({
 }: EventsSectionProps) {
   const router = useRouter();
 
-  // Combine presentiel sessions with online formations
+  // Group presentiel sessions by formation
   const presentielSessions = featuredSession
     ? [featuredSession, ...upcomingSessions]
     : upcomingSessions;
 
+  const groupedPresentiel = presentielSessions.reduce(
+    (acc, item) => {
+      const formationId = item.formation.id;
+      if (!acc[formationId]) {
+        acc[formationId] = {
+          formation: item.formation,
+          sessions: [],
+        };
+      }
+      acc[formationId].sessions.push(item.session);
+      return acc;
+    },
+    {} as Record<
+      number,
+      { formation: Formation; sessions: FormationSession[] }
+    >,
+  );
+
+  const presentielItems = Object.values(groupedPresentiel);
+
   // Convert online formations to carousel items (they don't have sessions)
   const onlineItems = onlineFormations.map((formation) => ({
     formation,
-    session: null as FormationSession | null,
+    sessions: [] as FormationSession[],
   }));
 
   // Combine all items for carousel
-  const allSessions = [...presentielSessions, ...onlineItems];
+  const allSessions = [...presentielItems, ...onlineItems];
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -54,16 +74,15 @@ export default function EventsSection({
     return () => clearInterval(interval);
   }, [isAutoPlaying, allSessions.length]);
 
-  const handleReservePlace = (formationId: number) => {
-    const currentItem = allSessions[currentIndex];
+  const handleReservePlace = (formationId: number, sessionId?: number) => {
     const params = new URLSearchParams({
       modal: "reserve",
       id: formationId.toString(),
     });
 
     // Include sessionId for presentiel formations
-    if (currentItem.session) {
-      params.append("sessionId", currentItem.session.id.toString());
+    if (sessionId) {
+      params.append("sessionId", sessionId.toString());
     }
 
     router.push(`/formation?${params.toString()}`);
@@ -166,9 +185,12 @@ export default function EventsSection({
                         ? "FORMATION EN LIGNE"
                         : "FORMATION PRÉSENTIEL"}
                     </div>
-                    {currentSession.session && (
+                    {currentSession.sessions.length > 0 && (
                       <div className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold bg-white/20 backdrop-blur-sm">
-                        {currentSession.session.availableSpots} places restantes
+                        {currentSession.sessions.length} session
+                        {currentSession.sessions.length > 1 ? "s" : ""}{" "}
+                        disponible
+                        {currentSession.sessions.length > 1 ? "s" : ""}
                       </div>
                     )}
                     {currentSession.formation.type === "online" && (
@@ -195,68 +217,105 @@ export default function EventsSection({
                     {currentSession.formation.description}
                   </p>
 
-                  <div className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-5 md:mb-6">
-                    {currentSession.session ? (
-                      <>
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          <span className="text-[11px] sm:text-xs font-semibold">
-                            {
-                              formatDateRange(
-                                currentSession.session.startDate,
-                                currentSession.session.endDate,
-                              ).day
-                            }{" "}
-                            {
-                              formatDateRange(
-                                currentSession.session.startDate,
-                                currentSession.session.endDate,
-                              ).month
-                            }
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          <span className="text-[11px] sm:text-xs">
-                            {currentSession.session.location}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          <span className="text-[11px] sm:text-xs">
-                            Accès illimité à vie
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  {currentSession.sessions.length > 0 ? (
+                    <div className="mb-4 sm:mb-5 md:mb-6 space-y-3">
+                      <div className="text-[11px] sm:text-xs font-semibold text-white/90 mb-2">
+                        Sessions disponibles:
+                      </div>
+                      <div className="flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar">
+                        {currentSession.sessions.map((session) => (
+                          <div
+                            key={session.id}
+                            className="flex items-center justify-between gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3"
+                          >
+                            <div className="flex flex-wrap gap-2 sm:gap-3 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <span className="text-[11px] sm:text-xs font-semibold">
+                                  {
+                                    formatDateRange(
+                                      session.startDate,
+                                      session.endDate,
+                                    ).day
+                                  }{" "}
+                                  {
+                                    formatDateRange(
+                                      session.startDate,
+                                      session.endDate,
+                                    ).month
+                                  }
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <span className="text-[11px] sm:text-xs">
+                                  {session.location}
+                                </span>
+                              </div>
+                              <div className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20">
+                                {session.availableSpots} places
+                              </div>
+                            </div>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() =>
+                                handleReservePlace(
+                                  currentSession.formation.id,
+                                  session.id,
+                                )
+                              }
+                              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold text-white whitespace-nowrap"
+                              style={{
+                                backgroundColor: "var(--color-brand, #16a34a)",
+                              }}
+                            >
+                              Réserver
+                            </motion.button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-5 md:mb-6">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="text-[11px] sm:text-xs">
+                          Accès illimité à vie
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() =>
-                        handleReservePlace(currentSession.formation.id)
-                      }
-                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-xs sm:text-sm text-white shadow-lg transition-all duration-300"
-                      style={{
-                        backgroundColor: "var(--color-brand, #16a34a)",
-                      }}
-                    >
-                      {currentSession.formation.type === "online"
-                        ? "Acheter maintenant"
-                        : "Réserver ma place"}
-                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </motion.button>
+                  {currentSession.formation.type === "online" && (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() =>
+                          handleReservePlace(currentSession.formation.id)
+                        }
+                        className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-xs sm:text-sm text-white shadow-lg transition-all duration-300"
+                        style={{
+                          backgroundColor: "var(--color-brand, #16a34a)",
+                        }}
+                      >
+                        Acheter maintenant
+                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </motion.button>
 
-                    <span className="text-white/80 text-xs sm:text-sm font-semibold">
+                      <span className="text-white/80 text-xs sm:text-sm font-semibold">
+                        {currentSession.formation.price.toLocaleString("fr-FR")}{" "}
+                        FCFA
+                      </span>
+                    </div>
+                  )}
+                  {currentSession.sessions.length > 0 && (
+                    <div className="text-white/80 text-xs sm:text-sm font-semibold">
                       {currentSession.formation.price.toLocaleString("fr-FR")}{" "}
                       FCFA
-                    </span>
-                  </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </AnimatePresence>
