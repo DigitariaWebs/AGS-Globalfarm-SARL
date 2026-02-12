@@ -214,3 +214,13 @@ export type ContactFormData = {
   subject: string;
   message: string;
 };
+
+export type FormationProgress = {
+  _id?: string;
+  userId: string;
+  formationId: number;
+  completedLessons: string[]; // Format: "sectionId-lessonId"
+  lastAccessedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};

@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
-import type { Formation, Product, Order } from "@/types";
+import type { Formation, Product, Order, FormationProgress } from "@/types";
 import FormationModel, { IFormation } from "./models/Formation";
 import ProductModel, { IProduct } from "./models/Product";
 import OrderModel, { IOrder } from "./models/Order";
+import FormationProgressModel from "./models/FormationProgress";
 
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 
@@ -67,6 +68,45 @@ export async function getOwnedFormations(userId: string): Promise<number[]> {
   } catch (error) {
     console.error("Failed to fetch owned formations", error);
     return [];
+  }
+}
+
+export async function getFormationProgress(
+  userId: string,
+  formationId: number,
+): Promise<FormationProgress | null> {
+  try {
+    await connectToDatabase();
+    const progress = await FormationProgressModel.findOne({
+      userId,
+      formationId,
+    });
+    return progress ? (progress.toObject() as FormationProgress) : null;
+  } catch (error) {
+    console.error("Failed to fetch formation progress", error);
+    return null;
+  }
+}
+
+export async function updateFormationProgress(
+  userId: string,
+  formationId: number,
+  completedLessons: string[],
+): Promise<FormationProgress | null> {
+  try {
+    await connectToDatabase();
+    const progress = await FormationProgressModel.findOneAndUpdate(
+      { userId, formationId },
+      {
+        completedLessons,
+        lastAccessedAt: new Date(),
+      },
+      { upsert: true, new: true },
+    );
+    return progress.toObject() as FormationProgress;
+  } catch (error) {
+    console.error("Failed to update formation progress", error);
+    return null;
   }
 }
 

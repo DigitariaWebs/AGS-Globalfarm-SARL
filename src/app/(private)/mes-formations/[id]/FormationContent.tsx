@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useLayoutEffect, useCallback, startTransition } from "react";
-import { ChevronDown, ChevronRight, Play, CheckCircle } from "lucide-react";
+import { useState, useCallback, useTransition } from "react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Play,
+  CheckCircle,
+  Lock,
+} from "lucide-react";
 import ReactPlayer from "react-player";
 import {
   Dialog,
@@ -10,17 +16,22 @@ import {
   DialogTitle,
 } from "@radix-ui/react-dialog";
 import type { Formation, Section, Lesson } from "@/types";
+import { updateProgress } from "../actions";
 
 interface FormationContentProps {
   formation: Formation;
+  initialProgress: string[];
 }
 
-export default function FormationContent({ formation }: FormationContentProps) {
+export default function FormationContent({
+  formation,
+  initialProgress,
+}: FormationContentProps) {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set(),
   );
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
-    () => new Set(),
+    () => new Set(initialProgress),
   );
   const [selectedLesson, setSelectedLesson] = useState<{
     sectionId: number;
@@ -29,19 +40,7 @@ export default function FormationContent({ formation }: FormationContentProps) {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  useLayoutEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedProgress = localStorage.getItem(
-        `formation-${formation._id}-progress`,
-      );
-      if (savedProgress) {
-        startTransition(() => {
-          setCompletedLessons(new Set(JSON.parse(savedProgress)));
-        });
-      }
-    }
-  }, [formation._id]);
+  const [isPending, startTransition] = useTransition();
 
   const toggleSection = useCallback((sectionId: number) => {
     setExpandedSections((prev) => {
@@ -64,7 +63,7 @@ export default function FormationContent({ formation }: FormationContentProps) {
     [completedLessons],
   );
 
-  const canExpandSection = useCallback(
+  const canAccessSection = useCallback(
     (sectionId: number) => {
       const sections = formation.sections;
       if (!sections) return false;
@@ -77,25 +76,55 @@ export default function FormationContent({ formation }: FormationContentProps) {
     [formation.sections, isSectionComplete],
   );
 
+  const canAccessLesson = useCallback(
+    (sectionId: number, lessonId: number) => {
+      const sections = formation.sections;
+      if (!sections) return false;
+
+      const section = sections.find((s) => s.id === sectionId);
+      if (!section) return false;
+
+      const lessonIndex = section.lessons.findIndex((l) => l.id === lessonId);
+      if (lessonIndex === -1) return false;
+
+      // First lesson in section is accessible if section is accessible
+      if (lessonIndex === 0) return canAccessSection(sectionId);
+
+      // Check if all previous lessons in this section are completed
+      for (let i = 0; i < lessonIndex; i++) {
+        const prevLesson = section.lessons[i];
+        if (!completedLessons.has(`${sectionId}-${prevLesson.id}`)) {
+          return false;
+        }
+      }
+
+      return true;
+    },
+    [formation.sections, completedLessons, canAccessSection],
+  );
+
   const markLessonComplete = useCallback(
-    (lessonId: string) => {
-      setCompletedLessons((prev) => {
-        const newSet = new Set(prev);
+    async (lessonId: string) => {
+      startTransition(async () => {
+        const newSet = new Set(completedLessons);
         if (newSet.has(lessonId)) {
           newSet.delete(lessonId);
         } else {
           newSet.add(lessonId);
         }
 
-        // Save to localStorage
-        localStorage.setItem(
-          `formation-${formation._id}-progress`,
-          JSON.stringify([...newSet]),
-        );
-        return newSet;
+        // Update in database
+        const result = await updateProgress(formation.id, [...newSet]);
+
+        if (result.success) {
+          setCompletedLessons(newSet);
+        } else {
+          console.error("Failed to update progress:", result.error);
+          setError(result.error || "Failed to update progress");
+        }
       });
     },
-    [formation._id],
+    [formation.id, completedLessons],
   );
 
   const totalLessons =
@@ -136,15 +165,18 @@ export default function FormationContent({ formation }: FormationContentProps) {
           >
             <button
               onClick={() => {
-                if (canExpandSection(section.id)) {
+                if (canAccessSection(section.id)) {
                   toggleSection(section.id);
                 }
               }}
-              disabled={!canExpandSection(section.id)}
+              disabled={!canAccessSection(section.id)}
               className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  {!canAccessSection(section.id) && (
+                    <Lock className="w-5 h-5 text-gray-400" />
+                  )}
                   {section.title}
                 </h3>
                 {section.description && (
@@ -157,67 +189,92 @@ export default function FormationContent({ formation }: FormationContentProps) {
                 <span className="text-sm text-gray-500">
                   {section.lessons.length} leçons
                 </span>
-                {expandedSections.has(section.id) ? (
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                )}
+                {canAccessSection(section.id) &&
+                  (expandedSections.has(section.id) ? (
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  ))}
               </div>
             </button>
 
             {expandedSections.has(section.id) && (
               <div className="px-6 pb-4">
                 <div className="space-y-3">
-                  {section.lessons.map((lesson) => (
-                    <div
-                      key={lesson.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() =>
-                            markLessonComplete(`${section.id}-${lesson.id}`)
-                          }
-                          disabled={!lesson.content}
-                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                            completedLessons.has(`${section.id}-${lesson.id}`)
-                              ? "bg-green-600 border-green-600"
-                              : "border-gray-300"
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          {completedLessons.has(
-                            `${section.id}-${lesson.id}`,
-                          ) && <CheckCircle className="w-4 h-4 text-white" />}
-                        </button>
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            {lesson.title}
-                          </h4>
-                          <p className="text-sm text-gray-500">
-                            {lesson.duration}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setSelectedLesson({
-                            sectionId: section.id,
-                            lessonId: lesson.id,
-                            lesson,
-                          });
-                          setError(null);
-                          setModalOpen(true);
-                        }}
-                        disabled={!lesson.content}
-                        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  {section.lessons.map((lesson) => {
+                    const lessonAccessible = canAccessLesson(
+                      section.id,
+                      lesson.id,
+                    );
+                    const lessonCompleted = completedLessons.has(
+                      `${section.id}-${lesson.id}`,
+                    );
+
+                    return (
+                      <div
+                        key={lesson.id}
+                        className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg transition-colors ${
+                          lessonAccessible ? "hover:bg-gray-100" : "opacity-60"
+                        }`}
                       >
-                        <Play className="w-4 h-4" />
-                        {completedLessons.has(`${section.id}-${lesson.id}`)
-                          ? "Revoir"
-                          : "Regarder"}
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() =>
+                              markLessonComplete(`${section.id}-${lesson.id}`)
+                            }
+                            disabled={
+                              !lessonAccessible || !lesson.content || isPending
+                            }
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                              lessonCompleted
+                                ? "bg-green-600 border-green-600"
+                                : "border-gray-300"
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            {lessonCompleted && (
+                              <CheckCircle className="w-4 h-4 text-white" />
+                            )}
+                          </button>
+                          <div>
+                            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                              {!lessonAccessible && (
+                                <Lock className="w-4 h-4 text-gray-400" />
+                              )}
+                              {lesson.title}
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              {lesson.duration}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedLesson({
+                              sectionId: section.id,
+                              lessonId: lesson.id,
+                              lesson,
+                            });
+                            setError(null);
+                            setModalOpen(true);
+                          }}
+                          disabled={!lessonAccessible || !lesson.content}
+                          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {lessonAccessible ? (
+                            <>
+                              <Play className="w-4 h-4" />
+                              {lessonCompleted ? "Revoir" : "Regarder"}
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-4 h-4" />
+                              Verrouillé
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -237,20 +294,24 @@ export default function FormationContent({ formation }: FormationContentProps) {
                 </h3>
               </DialogTitle>
               {error ? (
-                <p className="text-red-600">{error}</p>
+                <div className="bg-red-50 border border-red-200 rounded p-4">
+                  <p className="text-red-600">{error}</p>
+                </div>
               ) : (
-                <ReactPlayer
-                  src={selectedLesson.lesson.content}
-                  controls
-                  onReady={() => setError(null)}
-                  onError={() =>
-                    setError(
-                      "Erreur lors du chargement de la vidéo. Vérifiez le lien.",
-                    )
-                  }
-                  width="100%"
-                  height="auto"
-                />
+                selectedLesson.lesson.content && (
+                  <ReactPlayer
+                    src={selectedLesson.lesson.content}
+                    controls
+                    onReady={() => setError(null)}
+                    onError={() =>
+                      setError(
+                        "Erreur lors du chargement de la vidéo. Vérifiez le lien.",
+                      )
+                    }
+                    width="100%"
+                    height="auto"
+                  />
+                )
               )}
               <div className="mt-4 flex gap-4">
                 {!completedLessons.has(
@@ -262,9 +323,10 @@ export default function FormationContent({ formation }: FormationContentProps) {
                         `${selectedLesson.sectionId}-${selectedLesson.lessonId}`,
                       )
                     }
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                    disabled={isPending}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
                   >
-                    Marquer comme terminé
+                    {isPending ? "Enregistrement..." : "Marquer comme terminé"}
                   </button>
                 )}
                 <button
