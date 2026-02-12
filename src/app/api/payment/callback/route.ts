@@ -145,8 +145,6 @@ export async function POST(request: NextRequest) {
     // Connect to MongoDB
     await connectToDatabase();
 
-    console.log("Connected to MongoDB");
-
     // Check payment status
     if (status === "completed") {
       // Payment successful - create order

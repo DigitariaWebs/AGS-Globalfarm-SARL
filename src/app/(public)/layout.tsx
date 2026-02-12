@@ -1,10 +1,9 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import Footer from "@/components/layout/Footer";
 import dynamic from "next/dynamic";
-import Footer from "./Footer";
 
-const Header = dynamic(() => import("./Header"), {
+const Header = dynamic(() => import("@/components/layout/Header"), {
   ssr: false,
   loading: () => (
     <>
@@ -32,17 +31,11 @@ export default function ConditionalLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const hideLayout =
-    pathname?.startsWith("/login") ||
-    pathname?.startsWith("/register") ||
-    pathname?.startsWith("/forgot-password");
-
   return (
     <>
-      {!hideLayout && <Header />}
+      <Header />
       {children}
-      {!hideLayout && <Footer />}
+      <Footer />
     </>
   );
 }
