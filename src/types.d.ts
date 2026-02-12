@@ -198,6 +198,19 @@ export type Order = {
   paymentStatus: "paid" | "pending" | "failed";
   paymentMethod?: string;
   address?: Address;
+  paydunyaToken?: string;
+  paydunyaStatus?: string;
+  paydunyaReceiptUrl?: string;
+  paydunyaCustomer?: PaydunyaCustomer;
+  paydunyaFailReason?: string;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type ContactFormData = {
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
 };

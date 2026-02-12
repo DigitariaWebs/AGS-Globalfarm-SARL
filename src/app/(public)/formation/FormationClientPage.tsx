@@ -965,7 +965,7 @@ export default function FormationClientPage({
                                         </div>
                                         <div className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2">
                                           ({modalProgram.durationDays} jours •
-                                          08:00 - 17:00)
+                                          08:00 - 13:00)
                                         </div>
                                       </div>
 

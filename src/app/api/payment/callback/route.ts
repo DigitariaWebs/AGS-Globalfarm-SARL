@@ -6,6 +6,9 @@ import qs from "qs";
 import Order from "@/lib/models/Order";
 import FormationModel from "@/lib/models/Formation";
 import { connectToDatabase } from "@/lib/db";
+import { sendEmail } from "@/lib/email";
+import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
+import NewOrderNotificationEmail from "@/emails/NewOrderNotificationEmail";
 import type {
   OrderItem,
   PaydunyaCallbackData,
@@ -171,6 +174,10 @@ export async function POST(request: NextRequest) {
         paymentStatus: "paid",
         paymentMethod: "paydunya",
         address: custom_data.address,
+        paydunyaToken: invoice.token,
+        paydunyaStatus: status,
+        paydunyaReceiptUrl: validatedData.receipt_url,
+        paydunyaCustomer: validatedData.customer,
       });
       console.log("Order created successfully:", order._id);
 
@@ -188,7 +195,56 @@ export async function POST(request: NextRequest) {
           },
         );
       }
+
+      // Get user details for email
+      const user = await db
+        .collection("users")
+        .findOne({ id: custom_data.userId });
       await client.close();
+
+      // Send email notifications
+      try {
+        const customerName =
+          validatedData.customer?.name ||
+          user?.name ||
+          user?.firstName + " " + user?.lastName ||
+          "Client";
+        const customerEmail = user?.email || validatedData.customer?.email;
+        const customerPhone = validatedData.customer?.phone || user?.phone;
+
+        // Send confirmation email to client
+        if (customerEmail) {
+          await sendEmail({
+            to: customerEmail,
+            subject: "Confirmation de votre commande - AGS Globalfarm",
+            template: OrderConfirmationEmail({
+              customerName,
+              order: order.toObject(),
+              receiptUrl: validatedData.receipt_url,
+            }),
+          });
+          console.log("Order confirmation email sent to client");
+        }
+
+        // Send notification email to owner/admin
+        const ownerEmail = process.env.STORE_EMAIL;
+        if (ownerEmail) {
+          await sendEmail({
+            to: ownerEmail,
+            subject: `Nouvelle commande #${order._id} - ${customerName}`,
+            template: NewOrderNotificationEmail({
+              order: order.toObject(),
+              customerName,
+              customerEmail: customerEmail || "Non fourni",
+              customerPhone,
+            }),
+          });
+          console.log("Order notification email sent to owner");
+        }
+      } catch (emailError) {
+        console.error("Error sending order emails:", emailError);
+        // Don't fail the order if emails fail
+      }
 
       // Clear cart or mark as processed (implement based on your cart logic)
     } else if (status === "failed" || status === "cancelled") {
@@ -216,6 +272,11 @@ export async function POST(request: NextRequest) {
         paymentStatus: "failed",
         paymentMethod: "paydunya",
         address: custom_data.address,
+        paydunyaToken: invoice.token,
+        paydunyaStatus: status,
+        paydunyaReceiptUrl: validatedData.receipt_url,
+        paydunyaCustomer: validatedData.customer,
+        paydunyaFailReason: validatedData.fail_reason,
       });
 
       const client = new MongoClient(process.env.MONGODB_URI!);

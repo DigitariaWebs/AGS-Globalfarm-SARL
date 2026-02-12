@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import type { OrderItem } from "@/types";
+import type { OrderItem, PaydunyaCustomer } from "@/types";
 
 export interface IOrder extends Document {
   userId: string;
@@ -13,6 +13,11 @@ export interface IOrder extends Document {
     postalCode: string;
     country: string;
   };
+  paydunyaToken?: string;
+  paydunyaStatus?: string;
+  paydunyaReceiptUrl?: string;
+  paydunyaCustomer?: PaydunyaCustomer;
+  paydunyaFailReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +61,15 @@ const OrderSchema = new Schema<IOrder>(
       postalCode: { type: String },
       country: { type: String },
     },
+    paydunyaToken: { type: String },
+    paydunyaStatus: { type: String },
+    paydunyaReceiptUrl: { type: String },
+    paydunyaCustomer: {
+      name: { type: String },
+      email: { type: String },
+      phone: { type: String },
+    },
+    paydunyaFailReason: { type: String },
   },
   {
     timestamps: true,

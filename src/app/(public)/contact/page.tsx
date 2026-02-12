@@ -21,6 +21,7 @@ import {
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { sendContactEmail } from "./actions";
 
 const contactInfo = [
   {
@@ -119,6 +120,8 @@ function ContactPageContent() {
     message: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const initializedRef = useRef(false);
 
   // Get the actual background color from the body element
@@ -166,20 +169,34 @@ function ContactPageContent() {
     }
   }, [searchParams]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    setIsSubmitted(true);
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        subject: "",
-        message: "",
-      });
-    }, 3000);
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const result = await sendContactEmail(formData);
+
+      if (result.success) {
+        setIsSubmitted(true);
+        setTimeout(() => {
+          setIsSubmitted(false);
+          setFormData({
+            name: "",
+            email: "",
+            phone: "",
+            subject: "",
+            message: "",
+          });
+        }, 5000);
+      } else {
+        setErrorMessage(result.error || "Une erreur s'est produite");
+      }
+    } catch (error) {
+      setErrorMessage("Une erreur s'est produite lors de l'envoi");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (
@@ -488,12 +505,28 @@ function ContactPageContent() {
                     ></textarea>
                   </div>
 
+                  {errorMessage && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                      {errorMessage}
+                    </div>
+                  )}
+
                   <Button
                     type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-base font-semibold mt-auto"
+                    disabled={isLoading}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-base font-semibold mt-auto disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Send className="w-5 h-5 mr-2" />
-                    Envoyer le Message
+                    {isLoading ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5 mr-2" />
+                        Envoyer le Message
+                      </>
+                    )}
                   </Button>
                 </form>
               )}
