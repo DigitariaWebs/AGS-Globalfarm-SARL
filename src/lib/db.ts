@@ -1,9 +1,16 @@
 import mongoose from "mongoose";
-import type { Formation, Product, Order, FormationProgress } from "@/types";
+import type {
+  Formation,
+  Product,
+  Order,
+  FormationProgress,
+  QuizResult,
+} from "@/types";
 import FormationModel, { IFormation } from "./models/Formation";
 import ProductModel, { IProduct } from "./models/Product";
 import OrderModel, { IOrder } from "./models/Order";
 import FormationProgressModel from "./models/FormationProgress";
+import QuizResultModel from "./models/QuizResult";
 
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 
@@ -107,6 +114,62 @@ export async function updateFormationProgress(
   } catch (error) {
     console.error("Failed to update formation progress", error);
     return null;
+  }
+}
+
+export async function getQuizResult(
+  userId: string,
+  formationId: number,
+): Promise<QuizResult | null> {
+  try {
+    await connectToDatabase();
+    const result = await QuizResultModel.findOne({
+      userId,
+      formationId,
+      passed: true,
+    }).sort({ completedAt: -1 });
+    return result ? (result.toObject() as QuizResult) : null;
+  } catch (error) {
+    console.error("Failed to fetch quiz result", error);
+    return null;
+  }
+}
+
+export async function saveQuizResult(data: {
+  userId: string;
+  formationId: number;
+  score: number;
+  totalQuestions: number;
+  passed: boolean;
+  answers: { questionId: number; selectedAnswer: number; correct: boolean }[];
+}): Promise<QuizResult | null> {
+  try {
+    await connectToDatabase();
+    const result = await QuizResultModel.create({
+      ...data,
+      completedAt: new Date(),
+    });
+    return result.toObject() as QuizResult;
+  } catch (error) {
+    console.error("Failed to save quiz result", error);
+    return null;
+  }
+}
+
+export async function markCertificateSent(
+  userId: string,
+  formationId: number,
+): Promise<boolean> {
+  try {
+    await connectToDatabase();
+    await QuizResultModel.updateOne(
+      { userId, formationId, passed: true },
+      { $set: { certificateSent: true } },
+    );
+    return true;
+  } catch (error) {
+    console.error("Failed to mark certificate sent", error);
+    return false;
   }
 }
 

@@ -224,3 +224,35 @@ export type FormationProgress = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type QuizQuestion = {
+  id: number;
+  question: string;
+  options: string[];
+  correctAnswer: number; // index of the correct option
+};
+
+export type QuizResult = {
+  _id?: string;
+  userId: string;
+  formationId: number;
+  score: number;
+  totalQuestions: number;
+  passed: boolean;
+  certificateSentAt?: Date;
+  completedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type CertificateData = {
+  userName: string;
+  formationTitle: string;
+  completionDate: Date;
+};
+
+export type EmailAttachment = {
+  filename: string;
+  content: Buffer | Uint8Array;
+  contentType?: string;
+};

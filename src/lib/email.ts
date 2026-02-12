@@ -1,11 +1,13 @@
 import nodemailer from "nodemailer";
 import { render } from "@react-email/render";
 import { ReactElement } from "react";
+import type { EmailAttachment } from "@/types";
 
 interface EmailOptions {
   to: string;
   subject: string;
   template: ReactElement;
+  attachments?: EmailAttachment[];
 }
 
 // Validate email configuration
@@ -35,7 +37,12 @@ function createTransporter() {
 /**
  * Send email using React component template
  */
-export async function sendEmail({ to, subject, template }: EmailOptions) {
+export async function sendEmail({
+  to,
+  subject,
+  template,
+  attachments,
+}: EmailOptions) {
   // Check if credentials are configured
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
     const errorMsg = `
@@ -72,6 +79,11 @@ EMAIL_PASSWORD=your-16-char-app-password
       to,
       subject,
       html,
+      attachments: attachments?.map((a) => ({
+        filename: a.filename,
+        content: Buffer.from(a.content),
+        contentType: a.contentType,
+      })),
     });
 
     console.log("✅ Email sent successfully:", info.messageId);

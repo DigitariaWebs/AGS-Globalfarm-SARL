@@ -40,53 +40,9 @@ export default async function FormationDetailPage({
   // Get user progress
   const progress = await getFormationProgress(session.user.id, formation.id);
   const initialProgress = progress ? progress.completedLessons : [];
-  const completedLessonsSet = new Set(initialProgress);
 
   // Filter out content from inaccessible lessons
   const sanitizedFormation: Formation = JSON.parse(JSON.stringify(formation));
-
-  if (sanitizedFormation.sections) {
-    sanitizedFormation.sections = sanitizedFormation.sections.map(
-      (section, sectionIndex) => {
-        // Check if previous section is complete
-        const canAccessSection =
-          sectionIndex === 0 ||
-          (sanitizedFormation.sections &&
-            sanitizedFormation.sections[sectionIndex - 1].lessons.every(
-              (lesson) =>
-                completedLessonsSet.has(
-                  `${sanitizedFormation.sections![sectionIndex - 1].id}-${lesson.id}`,
-                ),
-            ));
-
-        return {
-          ...section,
-          lessons: section.lessons.map((lesson, lessonIndex) => {
-            // Check if lesson is accessible
-            const canAccessLesson =
-              canAccessSection &&
-              (lessonIndex === 0 ||
-                section.lessons
-                  .slice(0, lessonIndex)
-                  .every((prevLesson) =>
-                    completedLessonsSet.has(`${section.id}-${prevLesson.id}`),
-                  ));
-
-            // If lesson is not accessible, remove content
-            if (!canAccessLesson) {
-              return {
-                id: lesson.id,
-                title: lesson.title,
-                duration: lesson.duration,
-              };
-            }
-
-            return lesson;
-          }),
-        };
-      },
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen">
@@ -127,6 +83,7 @@ export default async function FormationDetailPage({
       {/* Interactive Content */}
       <FormationContent
         formation={sanitizedFormation}
+        formationMongoId={formationId}
         initialProgress={initialProgress}
       />
     </div>

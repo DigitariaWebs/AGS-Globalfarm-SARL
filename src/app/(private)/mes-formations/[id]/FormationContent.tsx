@@ -7,6 +7,7 @@ import {
   Play,
   CheckCircle,
   Lock,
+  Award,
 } from "lucide-react";
 import ReactPlayer from "react-player";
 import {
@@ -15,16 +16,19 @@ import {
   DialogOverlay,
   DialogTitle,
 } from "@radix-ui/react-dialog";
+import Link from "next/link";
 import type { Formation, Section, Lesson } from "@/types";
 import { updateProgress } from "../actions";
 
 interface FormationContentProps {
   formation: Formation;
+  formationMongoId: string;
   initialProgress: string[];
 }
 
 export default function FormationContent({
   formation,
+  formationMongoId,
   initialProgress,
 }: FormationContentProps) {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
@@ -344,20 +348,24 @@ export default function FormationContent({
         </DialogContent>
       </Dialog>
 
-      {/* Certificate Section */}
+      {/* Quiz & Certificate Section */}
       {progressPercentage === 100 && (
         <div className="mt-8 bg-linear-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200">
           <div className="text-center">
-            <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+            <Award className="w-12 h-12 text-green-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Félicitations !
             </h3>
             <p className="text-gray-600 mb-4">
-              Vous avez terminé cette formation avec succès.
+              Vous avez terminé toutes les leçons. Passez le quiz pour obtenir
+              votre certificat de formation.
             </p>
-            <button className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium">
-              Télécharger le certificat
-            </button>
+            <Link
+              href={`/mes-formations/${formationMongoId}/quiz`}
+              className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              Passer le quiz
+            </Link>
           </div>
         </div>
       )}
