@@ -17,11 +17,11 @@ import {
   DialogTitle,
 } from "@radix-ui/react-dialog";
 import Link from "next/link";
-import type { Formation, Section, Lesson } from "@/types";
+import type { Section, Lesson, OnlineFormation } from "@/types";
 import { updateProgress } from "../actions";
 
 interface FormationContentProps {
-  formation: Formation;
+  formation: OnlineFormation;
   formationMongoId: string;
   initialProgress: string[];
 }
@@ -118,7 +118,7 @@ export default function FormationContent({
         }
 
         // Update in database
-        const result = await updateProgress(formation.id, [...newSet]);
+        const result = await updateProgress(formationMongoId, [...newSet]);
 
         if (result.success) {
           setCompletedLessons(newSet);
@@ -128,7 +128,7 @@ export default function FormationContent({
         }
       });
     },
-    [formation.id, completedLessons],
+    [completedLessons, formationMongoId],
   );
 
   const totalLessons =
@@ -246,9 +246,6 @@ export default function FormationContent({
                               )}
                               {lesson.title}
                             </h4>
-                            <p className="text-sm text-gray-500">
-                              {lesson.duration}
-                            </p>
                           </div>
                         </div>
                         <button

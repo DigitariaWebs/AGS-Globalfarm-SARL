@@ -1,4 +1,4 @@
-import { getFormations, getOwnedFormations } from "@/lib/db";
+import { getOnlineFormations, getPresentialFormations } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import FormationClientPage from "./FormationClientPage";
@@ -58,24 +58,26 @@ const processSteps = [
 ];
 
 export default async function FormationPage() {
-  // Fetch formations from MongoDB and convert to plain objects
-  const formations = await getFormations();
-  const trainingPrograms = JSON.parse(JSON.stringify(formations));
-
-  // Check user's owned formations
+  // Check if user is logged in
   const session = await auth.api.getSession({ headers: await headers() });
-  let ownedFormationIds: number[] = [];
-  if (session?.user?.id) {
-    ownedFormationIds = await getOwnedFormations(session.user.id);
-  }
+  const userId = session?.user?.id;
+
+  // Fetch formations from MongoDB and convert to plain objects
+  const [onlineFormations, presentielFormations] = await Promise.all([
+    getOnlineFormations(userId),
+    getPresentialFormations(userId),
+  ]);
+
+  const serializedOnline = JSON.parse(JSON.stringify(onlineFormations));
+  const serializedPresential = JSON.parse(JSON.stringify(presentielFormations));
 
   return (
     <FormationClientPage
-      trainingPrograms={trainingPrograms}
+      onlineFormations={serializedOnline}
+      presentielFormations={serializedPresential}
       categories={categories}
       benefits={benefits}
       processSteps={processSteps}
-      ownedFormationIds={ownedFormationIds}
     />
   );
 }

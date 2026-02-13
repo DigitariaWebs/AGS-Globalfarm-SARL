@@ -106,109 +106,121 @@ export default function Cart() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {cart.map((item) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all border border-gray-100"
-                    >
-                      <div className="flex gap-4">
-                        <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-green-50 shrink-0 border border-gray-100">
-                          <Image
-                            src={item.image}
-                            alt={"name" in item ? item.name : item.title}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-gray-900 mb-1.5 text-sm line-clamp-2">
-                            {"name" in item ? item.name : item.title}
-                          </h3>
-                          {/* Show selected session for presentiel formations */}
-                          {"title" in item && item.selectedSessionId && (
-                            <p className="text-xs text-gray-600 mb-1">
-                              Session {item.selectedSessionId}
-                              {item.sessions &&
-                                (() => {
-                                  const session = item.sessions.find(
-                                    (s) => s.id === item.selectedSessionId,
-                                  );
-                                  return session ? (
-                                    <span className="ml-1">
-                                      (
-                                      {new Date(
-                                        session.startDate,
-                                      ).toLocaleDateString()}{" "}
-                                      -{" "}
-                                      {new Date(
-                                        session.endDate,
-                                      ).toLocaleDateString()}
-                                      )
-                                    </span>
-                                  ) : null;
-                                })()}
+                  {cart.map((item) => {
+                    const itemId = "name" in item ? item.id : item._id || "";
+                    const itemKey = item.selectedSessionId
+                      ? `${itemId}-${item.selectedSessionId}`
+                      : itemId;
+
+                    return (
+                      <motion.div
+                        key={itemKey}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all border border-gray-100"
+                      >
+                        <div className="flex gap-4">
+                          <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-green-50 shrink-0 border border-gray-100">
+                            <Image
+                              src={item.image}
+                              alt={"name" in item ? item.name : item.title}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-gray-900 mb-1.5 text-sm line-clamp-2">
+                              {"name" in item ? item.name : item.title}
+                            </h3>
+                            {/* Show selected session for presentiel formations */}
+                            {"title" in item &&
+                              item.selectedSessionId &&
+                              "sessions" in item &&
+                              item.sessions && (
+                                <p className="text-xs text-gray-600 mb-1">
+                                  Session {item.selectedSessionId}
+                                  {(() => {
+                                    const session = item.sessions.find(
+                                      (s: { id: number }) =>
+                                        s.id === item.selectedSessionId,
+                                    );
+                                    return session ? (
+                                      <span className="ml-1">
+                                        (
+                                        {new Date(
+                                          session.startDate,
+                                        ).toLocaleDateString()}{" "}
+                                        -{" "}
+                                        {new Date(
+                                          session.endDate,
+                                        ).toLocaleDateString()}
+                                        )
+                                      </span>
+                                    ) : null;
+                                  })()}
+                                </p>
+                              )}
+                            <p className="text-base font-bold text-green-600 mb-3">
+                              {item.price.toLocaleString()} FCFA
                             </p>
-                          )}
-                          <p className="text-base font-bold text-green-600 mb-3">
-                            {item.price.toLocaleString()} FCFA
-                          </p>
-                          <div className="flex items-center justify-between">
-                            {/* Quantity Controls - Only for products */}
-                            {"name" in item ? (
-                              <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
-                                <button
-                                  onClick={() =>
-                                    updateQuantity(item.id, item.quantity - 1)
-                                  }
-                                  className="p-1.5 hover:bg-white rounded-md transition-all duration-200 hover:scale-110 active:scale-95"
-                                  aria-label="Diminuer la quantité"
-                                >
-                                  <Minus className="w-4 h-4 text-gray-700" />
-                                </button>
-                                <span className="w-10 text-center font-bold text-gray-900 text-sm">
-                                  {item.quantity}
+                            <div className="flex items-center justify-between">
+                              {/* Quantity Controls - Only for products */}
+                              {"name" in item ? (
+                                <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
+                                  <button
+                                    onClick={() =>
+                                      updateQuantity(item.id, item.quantity - 1)
+                                    }
+                                    className="p-1.5 hover:bg-white rounded-md transition-all duration-200 hover:scale-110 active:scale-95"
+                                    aria-label="Diminuer la quantité"
+                                  >
+                                    <Minus className="w-4 h-4 text-gray-700" />
+                                  </button>
+                                  <span className="w-10 text-center font-bold text-gray-900 text-sm">
+                                    {item.quantity}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      updateQuantity(item.id, item.quantity + 1)
+                                    }
+                                    className="p-1.5 hover:bg-white rounded-md transition-all duration-200 hover:scale-110 active:scale-95"
+                                    aria-label="Augmenter la quantité"
+                                  >
+                                    <Plus className="w-4 h-4 text-gray-700" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-500 bg-green-50 px-3 py-1.5 rounded-lg">
+                                  Inscription
+                                </div>
+                              )}
+                              {/* Remove Button */}
+                              <button
+                                onClick={() => removeFromCart(itemId)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                                aria-label="Retirer du panier"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                            {/* Subtotal */}
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <p className="text-xs text-gray-500">
+                                Sous-total:{" "}
+                                <span className="font-bold text-gray-900">
+                                  {(
+                                    item.price * item.quantity
+                                  ).toLocaleString()}{" "}
+                                  FCFA
                                 </span>
-                                <button
-                                  onClick={() =>
-                                    updateQuantity(item.id, item.quantity + 1)
-                                  }
-                                  className="p-1.5 hover:bg-white rounded-md transition-all duration-200 hover:scale-110 active:scale-95"
-                                  aria-label="Augmenter la quantité"
-                                >
-                                  <Plus className="w-4 h-4 text-gray-700" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="text-xs text-gray-500 bg-green-50 px-3 py-1.5 rounded-lg">
-                                Inscription
-                              </div>
-                            )}
-                            {/* Remove Button */}
-                            <button
-                              onClick={() => removeFromCart(item.id)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
-                              aria-label="Retirer du panier"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          {/* Subtotal */}
-                          <div className="mt-3 pt-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-500">
-                              Sous-total:{" "}
-                              <span className="font-bold text-gray-900">
-                                {(item.price * item.quantity).toLocaleString()}{" "}
-                                FCFA
-                              </span>
-                            </p>
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </div>

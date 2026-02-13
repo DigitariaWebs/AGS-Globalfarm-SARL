@@ -15,8 +15,8 @@ type CartContextType = {
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   addToCart: (item: Product | Formation, selectedSessionId?: number) => void;
-  removeFromCart: (itemId: number) => void;
-  updateQuantity: (itemId: number, newQuantity: number) => void;
+  removeFromCart: (itemId: number | string) => void;
+  updateQuantity: (itemId: number | string, newQuantity: number) => void;
   clearCart: () => void;
   cartItemCount: number;
   cartTotal: number;
@@ -40,26 +40,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (item: Product | Formation, selectedSessionId?: number) => {
     setCart((prevCart) => {
+      const itemId = "name" in item ? item.id : item._id;
       const existingItem = prevCart.find((cartItem) => {
+        const cartItemId = "name" in cartItem ? cartItem.id : cartItem._id;
         // For formations with sessions, also check if same session
         if ("title" in item && selectedSessionId) {
           return (
-            cartItem.id === item.id &&
+            cartItemId === itemId &&
             cartItem.selectedSessionId === selectedSessionId
           );
         }
-        return cartItem.id === item.id;
+        return cartItemId === itemId;
       });
       if (existingItem) {
         // For formations, don't increase quantity since they are enrollments
         if ("title" in item) {
           return prevCart;
         }
-        return prevCart.map((cartItem) =>
-          cartItem.id === item.id
+        return prevCart.map((cartItem) => {
+          const cartItemId = "name" in cartItem ? cartItem.id : cartItem._id;
+          return cartItemId === itemId
             ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem,
-        );
+            : cartItem;
+        });
       }
       return [
         ...prevCart,
@@ -69,19 +72,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (itemId: number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== itemId));
+  const removeFromCart = (itemId: number | string) => {
+    setCart((prevCart) =>
+      prevCart.filter((item) => {
+        const cartItemId = "name" in item ? item.id : item._id;
+        return cartItemId !== itemId;
+      }),
+    );
   };
 
-  const updateQuantity = (itemId: number, newQuantity: number) => {
+  const updateQuantity = (itemId: number | string, newQuantity: number) => {
     if (newQuantity === 0) {
       removeFromCart(itemId);
       return;
     }
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item,
-      ),
+      prevCart.map((item) => {
+        const cartItemId = "name" in item ? item.id : item._id;
+        return cartItemId === itemId
+          ? { ...item, quantity: newQuantity }
+          : item;
+      }),
     );
   };
 

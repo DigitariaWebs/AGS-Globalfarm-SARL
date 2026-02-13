@@ -1,11 +1,11 @@
 import { auth } from "@/lib/auth";
-import { getUserOrders, getFormations, getFormationProgress } from "@/lib/db";
+import { getOwnedFormations, getFormationProgress } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import FormationContent from "./FormationContent";
 import Image from "next/image";
 import BackButton from "./BackButton";
-import type { Formation } from "@/types";
+import type { OnlineFormation } from "@/types";
 
 export default async function FormationDetailPage({
   params,
@@ -19,30 +19,26 @@ export default async function FormationDetailPage({
 
   const { id: formationId } = await params;
 
-  // Get formation details
-  const formations = await getFormations();
-  const formation = formations.find((f) => f._id?.valueOf() === formationId);
-
-  if (!formation || formation.type !== "online") {
-    redirect("/mes-formations");
-  }
-
-  // Check if user owns this formation using numeric ID
-  const orders = await getUserOrders(session.user.id);
-  const ownsFormation = orders.some((order) =>
-    order.items.some((item) => "title" in item && item.id === formation.id),
+  // Check if user owns this formation
+  const { online: ownedOnlineFormations } = await getOwnedFormations(
+    session.user.id,
+  );
+  const formation = ownedOnlineFormations.find(
+    (f) => f._id?.valueOf() === formationId,
   );
 
-  if (!ownsFormation) {
+  if (!formation) {
     redirect("/mes-formations");
   }
 
   // Get user progress
-  const progress = await getFormationProgress(session.user.id, formation.id);
+  const progress = await getFormationProgress(session.user.id, formationId);
   const initialProgress = progress ? progress.completedLessons : [];
 
   // Filter out content from inaccessible lessons
-  const sanitizedFormation: Formation = JSON.parse(JSON.stringify(formation));
+  const sanitizedFormation: OnlineFormation = JSON.parse(
+    JSON.stringify(formation),
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen">
@@ -57,7 +53,6 @@ export default async function FormationDetailPage({
             <p className="text-gray-600 mb-4">{formation.description}</p>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span>📚 {formation.level}</span>
-              <span>⏱️ {formation.durationDays} jours</span>
               <span>
                 📹{" "}
                 {formation.sections?.reduce(

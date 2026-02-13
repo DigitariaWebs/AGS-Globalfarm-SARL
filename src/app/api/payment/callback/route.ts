@@ -4,15 +4,16 @@ import crypto from "crypto";
 import { z } from "zod";
 import qs from "qs";
 import Order from "@/lib/models/Order";
-import FormationModel from "@/lib/models/Formation";
+import OnlineFormationModel from "@/lib/models/OnlineFormation";
+import PresentialFormationModel from "@/lib/models/PresentialFormation";
 import { connectToDatabase } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import NewOrderNotificationEmail from "@/emails/NewOrderNotificationEmail";
 import type {
+  FormationSession,
   OrderItem,
   PaydunyaCallbackData,
-  FormationSession,
 } from "@/types";
 
 // Zod schemas for validation
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
   console.log("Paydunya callback received");
   try {
     const formData = await request.formData();
-    console.log("Form data keys:", Array.from(formData.keys()));
+    // console.log("Form data keys:", Array.from(formData.keys()));
 
     // Build query string from form data keys starting with 'data['
     const queryString = Array.from(formData.entries())
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     // Convert objects with numeric keys to arrays
     const parsedData = objectToArray(data);
 
-    console.log("Parsed data:", JSON.stringify(parsedData, null, 2));
+    // console.log("Parsed data:", JSON.stringify(parsedData, null, 2));
 
     // Validate the data with Zod
     let validatedData: PaydunyaCallbackData;
@@ -150,18 +151,86 @@ export async function POST(request: NextRequest) {
 
     // Check payment status
     if (status === "completed") {
-      // Payment successful - create order
+      // Payment successful - create order and update formations
       const orderItems: OrderItem[] = [];
       for (const item of custom_data.cart) {
-        const orderItem = item as OrderItem;
+        const orderItem = { ...item } as OrderItem;
+
+        // Ensure id field exists (required by Order model)
+        if (!orderItem.id && item._id) {
+          // Convert MongoDB _id to numeric id or use hash
+          orderItem.id = parseInt(item._id.toString().substring(18, 24), 16);
+        }
+
         if (item.title) {
-          // It's a formation
-          const formation = await FormationModel.findById(item._id || item.id);
-          if (formation && formation.type === "presentiel") {
-            const openSession = (
-              formation.sessions as FormationSession[]
-            )?.find((s: FormationSession) => s.status === "open");
-            orderItem.sessionId = openSession?.id;
+          // Try to find the formation in both collections by _id
+          const onlineFormation = await OnlineFormationModel.findById(item._id);
+          const presentialFormation = await PresentialFormationModel.findById(
+            item._id,
+          );
+
+          if (onlineFormation) {
+            // It's an online formation
+            console.log(
+              `Found online formation: ${onlineFormation._id}, current owners:`,
+              onlineFormation.owners,
+            );
+            await OnlineFormationModel.updateOne(
+              { _id: onlineFormation._id },
+              { $addToSet: { owners: custom_data.userId } },
+            );
+            console.log(
+              `Added user ${custom_data.userId} to online formation ${onlineFormation._id} owners`,
+            );
+          } else if (presentialFormation) {
+            // It's a presential formation
+            console.log(
+              `Found presential formation: ${presentialFormation._id}`,
+            );
+            const sessionId = item.selectedSessionId;
+            if (sessionId) {
+              // Update specific session with participant
+              await PresentialFormationModel.updateOne(
+                { _id: presentialFormation._id, "sessions.id": sessionId },
+                {
+                  $addToSet: {
+                    "sessions.$.participants": custom_data.userId,
+                  },
+                  $inc: { "sessions.$.availableSpots": -1 },
+                },
+              );
+              console.log(
+                `Added user ${custom_data.userId} to presential formation ${presentialFormation._id} session ${sessionId}`,
+              );
+              orderItem.sessionId = sessionId;
+            } else {
+              // Fallback to first open session if no sessionId specified
+              const openSession = presentialFormation.sessions?.find(
+                (s: FormationSession) => s.status === "open",
+              );
+              if (openSession) {
+                await PresentialFormationModel.updateOne(
+                  {
+                    _id: presentialFormation._id,
+                    "sessions.id": openSession.id,
+                  },
+                  {
+                    $addToSet: {
+                      "sessions.$.participants": custom_data.userId,
+                    },
+                    $inc: { "sessions.$.availableSpots": -1 },
+                  },
+                );
+                console.log(
+                  `Added user ${custom_data.userId} to presential formation ${presentialFormation._id} session ${openSession.id}`,
+                );
+                orderItem.sessionId = openSession.id;
+              }
+            }
+          } else {
+            console.error(
+              `Formation not found in either collection with _id: ${item._id}`,
+            );
           }
         }
         orderItems.push(orderItem);
@@ -248,19 +317,20 @@ export async function POST(request: NextRequest) {
 
       // Clear cart or mark as processed (implement based on your cart logic)
     } else if (status === "failed" || status === "cancelled") {
-      // Payment failed - create order with failed status
+      // Payment failed - create order with failed status (no formation updates)
       const orderItems: OrderItem[] = [];
       for (const item of custom_data.cart) {
-        const orderItem = item as OrderItem;
-        if (item.title) {
-          // It's a formation
-          const formation = await FormationModel.findById(item._id || item.id);
-          if (formation && formation.type === "presentiel") {
-            const openSession = (
-              formation.sessions as FormationSession[]
-            )?.find((s: FormationSession) => s.status === "open");
-            orderItem.sessionId = openSession?.id;
-          }
+        const orderItem = { ...item } as OrderItem;
+
+        // Ensure id field exists (required by Order model)
+        if (!orderItem.id && item._id) {
+          // Convert MongoDB _id to numeric id or use hash
+          orderItem.id = parseInt(item._id.toString().substring(18, 24), 16);
+        }
+
+        if (item.title && item.sessions && item.selectedSessionId) {
+          // Presential formation - has sessions
+          orderItem.sessionId = item.selectedSessionId;
         }
         orderItems.push(orderItem);
       }

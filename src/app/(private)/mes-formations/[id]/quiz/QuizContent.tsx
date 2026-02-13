@@ -13,7 +13,7 @@ import { submitQuiz, resendCertificate } from "../../actions";
 import type { QuizQuestion } from "@/types";
 
 interface QuizContentProps {
-  formationId: number;
+  formationId: string;
   questions: QuizQuestion[];
   userEmail: string;
   alreadyPassed: boolean;

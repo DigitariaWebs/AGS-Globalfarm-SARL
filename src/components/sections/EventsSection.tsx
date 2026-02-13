@@ -11,45 +11,41 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import type { Formation, FormationSession } from "@/types";
+import type {
+  OnlineFormation,
+  PresentialFormation,
+  FormationSession,
+} from "@/types";
 
 interface EventsSectionProps {
-  featuredSession: { formation: Formation; session: FormationSession } | null;
-  upcomingSessions: { formation: Formation; session: FormationSession }[];
-  onlineFormations: Formation[];
+  presentielFormations: PresentialFormation[];
+  onlineFormations: OnlineFormation[];
 }
 
 export default function EventsSection({
-  featuredSession,
-  upcomingSessions,
+  presentielFormations,
   onlineFormations,
 }: EventsSectionProps) {
   const router = useRouter();
 
-  // Group presentiel sessions by formation
-  const presentielSessions = featuredSession
-    ? [featuredSession, ...upcomingSessions]
-    : upcomingSessions;
+  // Process presentiel formations - filter only formations with open/ongoing sessions
+  const presentielItems = presentielFormations
+    .map((formation) => {
+      const availableSessions = formation.sessions.filter(
+        (session) => session.status === "open" || session.status === "ongoing",
+      );
 
-  const groupedPresentiel = presentielSessions.reduce(
-    (acc, item) => {
-      const formationId = item.formation.id;
-      if (!acc[formationId]) {
-        acc[formationId] = {
-          formation: item.formation,
-          sessions: [],
-        };
-      }
-      acc[formationId].sessions.push(item.session);
-      return acc;
-    },
-    {} as Record<
-      number,
-      { formation: Formation; sessions: FormationSession[] }
-    >,
-  );
+      if (availableSessions.length === 0) return null;
 
-  const presentielItems = Object.values(groupedPresentiel);
+      return {
+        formation,
+        sessions: availableSessions,
+      };
+    })
+    .filter(Boolean) as {
+    formation: PresentialFormation;
+    sessions: FormationSession[];
+  }[];
 
   // Convert online formations to carousel items (they don't have sessions)
   const onlineItems = onlineFormations.map((formation) => ({
@@ -74,10 +70,10 @@ export default function EventsSection({
     return () => clearInterval(interval);
   }, [isAutoPlaying, allSessions.length]);
 
-  const handleReservePlace = (formationId: number, sessionId?: number) => {
+  const handleReservePlace = (formationId: string, sessionId?: number) => {
     const params = new URLSearchParams({
       modal: "reserve",
-      id: formationId.toString(),
+      id: formationId,
     });
 
     // Include sessionId for presentiel formations
@@ -261,7 +257,7 @@ export default function EventsSection({
                               whileTap={{ scale: 0.95 }}
                               onClick={() =>
                                 handleReservePlace(
-                                  currentSession.formation.id,
+                                  currentSession.formation._id!,
                                   session.id,
                                 )
                               }
@@ -293,7 +289,7 @@ export default function EventsSection({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() =>
-                          handleReservePlace(currentSession.formation.id)
+                          handleReservePlace(currentSession.formation._id!)
                         }
                         className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-xs sm:text-sm text-white shadow-lg transition-all duration-300"
                         style={{

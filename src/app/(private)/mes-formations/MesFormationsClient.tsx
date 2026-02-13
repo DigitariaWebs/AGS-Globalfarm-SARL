@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { Formation, FormationSession } from "@/types";
+import type { Formation, FormationSession, Section, Lesson } from "@/types";
 
 interface MesFormationsClientProps {
   onlineCourses: Formation[];
@@ -55,7 +55,9 @@ export default function MesFormationsClient({
                     </p>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-500">
-                        {course.durationDays} jours
+                        {course.type === "online"
+                          ? course.duration || "Illimité"
+                          : `${course.durationDays} jours`}
                       </span>
                       <span className="text-sm font-medium text-green-600">
                         {course.level}
@@ -134,13 +136,8 @@ export default function MesFormationsClient({
                     <p className="text-sm text-gray-600">{session.location}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    Places restantes: {session.availableSpots}
-                  </div>
-                  <button className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
-                    Voir les détails
-                  </button>
+                <div className="text-sm text-gray-600">
+                  Places restantes: {session.availableSpots}
                 </div>
               </div>
             ))}
@@ -201,14 +198,7 @@ export default function MesFormationsClient({
                     <p className="text-sm text-gray-600">{session.location}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    Formation complétée
-                  </div>
-                  <button className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
-                    Voir les détails
-                  </button>
-                </div>
+                <div className="text-sm text-gray-600">Formation complétée</div>
               </div>
             ))}
           </div>
@@ -252,7 +242,11 @@ export default function MesFormationsClient({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="font-medium">Durée</p>
-                    <p>{selectedFormation.durationDays} jours</p>
+                    <p>
+                      {selectedFormation.type === "presentiel"
+                        ? `${selectedFormation.durationDays} jours`
+                        : selectedFormation.duration || "Illimité"}
+                    </p>
                   </div>
                   <div>
                     <p className="font-medium">Niveau</p>
@@ -260,7 +254,12 @@ export default function MesFormationsClient({
                   </div>
                   <div>
                     <p className="font-medium">Participants</p>
-                    <p>{selectedFormation.participants}</p>
+                    <p>
+                      {selectedFormation.type === "presentiel"
+                        ? selectedFormation.sessions?.[0]?.participants
+                            ?.length || 0
+                        : "Illimité"}
+                    </p>
                   </div>
                   <div>
                     <p className="font-medium">Prix</p>
@@ -279,23 +278,19 @@ export default function MesFormationsClient({
                       <p>{selectedFormation.address}</p>
                     </div>
                   )}
-                {selectedFormation.sections &&
+                {selectedFormation.type === "online" &&
+                  selectedFormation.sections &&
                   selectedFormation.sections.length > 0 && (
                     <div>
                       <p className="font-medium mb-2">Programme</p>
                       <div className="space-y-2">
-                        {selectedFormation.sections.map((section) => (
+                        {selectedFormation.sections.map((section: Section) => (
                           <div key={section.id} className="border rounded p-3">
                             <h4 className="font-medium">{section.title}</h4>
-                            {section.description && (
-                              <p className="text-sm text-gray-600">
-                                {section.description}
-                              </p>
-                            )}
                             <ul className="mt-2 space-y-1">
-                              {section.lessons.map((lesson) => (
+                              {section.lessons.map((lesson: Lesson) => (
                                 <li key={lesson.id} className="text-sm">
-                                  • {lesson.title} ({lesson.duration})
+                                  • {lesson.title}
                                 </li>
                               ))}
                             </ul>

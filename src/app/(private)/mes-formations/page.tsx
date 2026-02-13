@@ -1,9 +1,13 @@
 import { auth } from "@/lib/auth";
-import { getUserOrders, getFormations, getOwnedFormations } from "@/lib/db";
+import { getOwnedFormations } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import MesFormationsClient from "./MesFormationsClient";
-import type { Formation, FormationSession, Section } from "@/types";
+import type {
+  FormationSession,
+  OnlineFormation,
+  PresentialFormation,
+} from "@/types";
 
 export default async function MesFormationsPage() {
   const session = await auth.api.getSession({
@@ -13,34 +17,28 @@ export default async function MesFormationsPage() {
     redirect("/login");
   }
 
-  const orders = await getUserOrders(session.user.id);
-  const allFormations = await getFormations();
-  const serializedFormations = JSON.parse(JSON.stringify(allFormations));
-  const ownedFormationIds = await getOwnedFormations(session.user.id);
+  const { presential: presentialFormations, online: onlineFormations } =
+    await getOwnedFormations(session.user.id);
 
-  // Extract purchased formations with their session info
-  const purchasedOnlineCourses = serializedFormations.filter(
-    (f: Formation) => f.type === "online" && ownedFormationIds.includes(f.id),
+  // Serialize formations to plain objects
+  const serializedOnline: OnlineFormation[] = JSON.parse(
+    JSON.stringify(onlineFormations),
   );
+
+  const serializedPresential: PresentialFormation[] = JSON.parse(
+    JSON.stringify(presentialFormations),
+  );
+
+  // Extract presential sessions by status
   const purchasedPresentialSessions: {
-    formation: Formation;
+    formation: PresentialFormation;
     session: FormationSession;
   }[] = [];
 
-  orders.forEach((order) => {
-    order.items.forEach((item) => {
-      if ("title" in item && item.id) {
-        const formation = serializedFormations.find(
-          (f: Formation) => f.id === item.id,
-        );
-        if (formation && formation.type === "presentiel" && item.sessionId) {
-          const session = formation.sessions?.find(
-            (s: Section) => s.id === item.sessionId,
-          );
-          if (session) {
-            purchasedPresentialSessions.push({ formation, session });
-          }
-        }
+  serializedPresential.forEach((formation) => {
+    formation.sessions?.forEach((sess: FormationSession) => {
+      if (sess.owned) {
+        purchasedPresentialSessions.push({ formation, session: sess });
       }
     });
   });
@@ -55,7 +53,7 @@ export default async function MesFormationsPage() {
 
   return (
     <MesFormationsClient
-      onlineCourses={purchasedOnlineCourses}
+      onlineCourses={serializedOnline}
       previousFormations={prevFormations}
       upcomingFormations={upFormations}
     />

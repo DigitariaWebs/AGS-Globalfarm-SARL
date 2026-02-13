@@ -7,6 +7,10 @@ interface CartItem {
   quantity: number;
   price: number;
   description?: string;
+  type?: "online" | "presentiel";
+  selectedSessionId?: number;
+  _id?: string;
+  id?: number;
 }
 
 export async function POST(request: NextRequest) {

@@ -1,12 +1,15 @@
 import mongoose from "mongoose";
 import type {
-  Formation,
   Product,
   Order,
   FormationProgress,
   QuizResult,
+  OnlineFormation,
+  PresentialFormation,
+  FormationSession,
 } from "@/types";
-import FormationModel, { IFormation } from "./models/Formation";
+import OnlineFormationModel from "./models/OnlineFormation";
+import PresentialFormationModel from "./models/PresentialFormation";
 import ProductModel, { IProduct } from "./models/Product";
 import OrderModel, { IOrder } from "./models/Order";
 import FormationProgressModel from "./models/FormationProgress";
@@ -27,15 +30,101 @@ export async function connectToDatabase() {
   }
 }
 
-export async function getFormations(): Promise<Formation[]> {
+export async function getOnlineFormations(
+  userId?: string,
+): Promise<OnlineFormation[]> {
   try {
     await connectToDatabase();
-    const formations = await FormationModel.find({});
-    return formations.map(
-      (formation: IFormation) => formation.toObject() as Formation,
-    );
+
+    // Fetch online formations with sections field to calculate stats
+    const onlineFormations = await OnlineFormationModel.find({}).lean();
+
+    // If user is logged in, check ownership
+    if (userId) {
+      return onlineFormations.map((formation: OnlineFormation) => {
+        const { owners, sections, ...rest } = formation;
+        const totalSections = sections?.length || 0;
+        const totalLessons =
+          sections?.reduce(
+            (sum, section) => sum + (section.lessons?.length || 0),
+            0,
+          ) || 0;
+
+        return {
+          ...rest,
+          owned: owners?.includes(userId) || false,
+          stats: {
+            totalSections,
+            totalLessons,
+          },
+        };
+      });
+    }
+
+    // If not logged in, just remove sensitive fields but include stats
+    return onlineFormations.map((formation: OnlineFormation) => {
+      const { sections, ...rest } = formation;
+      const totalSections = sections?.length || 0;
+      const totalLessons =
+        sections?.reduce(
+          (sum: number, section) => sum + (section.lessons?.length || 0),
+          0,
+        ) || 0;
+
+      return {
+        ...rest,
+        stats: {
+          totalSections,
+          totalLessons,
+        },
+      };
+    }) as OnlineFormation[];
   } catch (error) {
-    console.error("Failed to fetch formations", error);
+    console.error("Failed to fetch online formations", error);
+    return [];
+  }
+}
+
+export async function getPresentialFormations(
+  userId?: string,
+): Promise<PresentialFormation[]> {
+  try {
+    await connectToDatabase();
+
+    // Fetch presential formations and transform sessions
+    const presentialFormations = (await PresentialFormationModel.find(
+      {},
+    ).lean()) as PresentialFormation[];
+
+    // Transform presential formations to remove participants and add reservedSpots and owned
+    const transformedPresential = presentialFormations.map((formation) => {
+      const { sessions, ...rest } = formation;
+
+      // Check if user is enrolled in any session
+      const isEnrolledInAnySession = userId
+        ? sessions?.some((session) => session.participants?.includes(userId)) ||
+          false
+        : false;
+
+      const transformedSessions = sessions?.map((session) => {
+        const { participants, ...sessionRest } = session;
+        return {
+          ...sessionRest,
+          reservedSpots: participants?.length || 0,
+          owned: userId ? participants?.includes(userId) || false : false,
+        };
+      });
+
+      return {
+        ...rest,
+        owned: isEnrolledInAnySession,
+        sessions: transformedSessions,
+      };
+    });
+
+    return transformedPresential as PresentialFormation[];
+  } catch (error) {
+    console.error("Failed to fetch presential formations", error);
     return [];
   }
 }
@@ -62,25 +151,63 @@ export async function getUserOrders(userId: string): Promise<Order[]> {
   }
 }
 
-export async function getOwnedFormations(userId: string): Promise<number[]> {
+export async function getOwnedFormations(userId: string): Promise<{
+  presential: PresentialFormation[];
+  online: OnlineFormation[];
+}> {
   try {
-    const orders = await getUserOrders(userId);
-    const ownedSet = new Set<number>();
-    orders.forEach((order) => {
-      order.items.forEach((item) => {
-        if (item.id) ownedSet.add(item.id);
-      });
-    });
-    return Array.from(ownedSet);
+    await connectToDatabase();
+
+    // Get presential formations where user is in session participants
+    const presentialFormations = await PresentialFormationModel.find({
+      "sessions.participants": userId,
+    }).lean();
+
+    // Get online formations where user is in owners
+    const onlineFormations = await OnlineFormationModel.find({
+      owners: userId,
+    }).lean();
+
+    // Transform presential formations to remove participants and add reservedSpots
+    const transformedPresential = presentialFormations.map((formation) => {
+      const { sessions, ...rest } = formation;
+      return {
+        ...rest,
+        sessions: sessions?.map((session: FormationSession) => {
+          const { participants, ...sessionRest } = session;
+          return {
+            ...sessionRest,
+            owned: participants?.includes(userId) || false,
+          };
+        }),
+      };
+    }) as PresentialFormation[];
+
+    // Transform online formations to add stats and owned flag
+    const transformedOnline = onlineFormations.map((formation) => {
+      const { owners, ...rest } = formation;
+
+      return {
+        ...rest,
+      };
+    }) as OnlineFormation[];
+
+    return {
+      presential: transformedPresential,
+      online: transformedOnline,
+    };
   } catch (error) {
     console.error("Failed to fetch owned formations", error);
-    return [];
+    return {
+      presential: [],
+      online: [],
+    };
   }
 }
 
 export async function getFormationProgress(
   userId: string,
-  formationId: number,
+  formationId: string,
 ): Promise<FormationProgress | null> {
   try {
     await connectToDatabase();
@@ -97,7 +224,7 @@ export async function getFormationProgress(
 
 export async function updateFormationProgress(
   userId: string,
-  formationId: number,
+  formationId: string,
   completedLessons: string[],
 ): Promise<FormationProgress | null> {
   try {
@@ -119,7 +246,7 @@ export async function updateFormationProgress(
 
 export async function getQuizResult(
   userId: string,
-  formationId: number,
+  formationId: string,
 ): Promise<QuizResult | null> {
   try {
     await connectToDatabase();
@@ -137,7 +264,7 @@ export async function getQuizResult(
 
 export async function saveQuizResult(data: {
   userId: string;
-  formationId: number;
+  formationId: string;
   score: number;
   totalQuestions: number;
   passed: boolean;
@@ -158,7 +285,7 @@ export async function saveQuizResult(data: {
 
 export async function markCertificateSent(
   userId: string,
-  formationId: number,
+  formationId: string,
 ): Promise<boolean> {
   try {
     await connectToDatabase();

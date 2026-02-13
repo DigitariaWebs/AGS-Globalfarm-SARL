@@ -1,9 +1,8 @@
 import { auth } from "@/lib/auth";
 import {
-  getUserOrders,
-  getFormations,
   getFormationProgress,
   getQuizResult,
+  getOwnedFormations,
 } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -34,25 +33,15 @@ export default async function QuizPage({
   const { id: formationId } = await params;
 
   // Get formation details
-  const formations = await getFormations();
+  const { online: formations } = await getOwnedFormations(session.user.id);
   const formation = formations.find((f) => f._id?.valueOf() === formationId);
 
-  if (!formation || formation.type !== "online") {
-    redirect("/mes-formations");
-  }
-
-  // Check if user owns this formation
-  const orders = await getUserOrders(session.user.id);
-  const ownsFormation = orders.some((order) =>
-    order.items.some((item) => "title" in item && item.id === formation.id),
-  );
-
-  if (!ownsFormation) {
+  if (!formation) {
     redirect("/mes-formations");
   }
 
   // Check if user has completed all lessons
-  const progress = await getFormationProgress(session.user.id, formation.id);
+  const progress = await getFormationProgress(session.user.id, formation._id);
   const completedLessons = progress ? progress.completedLessons : [];
   const totalLessons =
     formation.sections?.reduce(
@@ -65,7 +54,7 @@ export default async function QuizPage({
   }
 
   // Check if user already passed
-  const existingResult = await getQuizResult(session.user.id, formation.id);
+  const existingResult = await getQuizResult(session.user.id, formation._id);
 
   const user = session.user as { email: string };
 
@@ -83,7 +72,7 @@ export default async function QuizPage({
       </div>
 
       <QuizContent
-        formationId={formation.id}
+        formationId={formation._id}
         questions={PLACEHOLDER_QUESTIONS}
         userEmail={user.email}
         alreadyPassed={!!existingResult?.passed}

@@ -5,8 +5,7 @@ import { headers } from "next/headers";
 import {
   getFormationProgress,
   updateFormationProgress,
-  getFormations,
-  getUserOrders,
+  getOwnedFormations,
   saveQuizResult,
   getQuizResult,
   markCertificateSent,
@@ -15,7 +14,7 @@ import { generateCertificatePdf } from "@/lib/certificate";
 import { sendEmail } from "@/lib/email";
 import CertificateEmail from "@/emails/CertificateEmail";
 
-export async function getProgress(formationId: number) {
+export async function getProgress(formationId: string) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
@@ -34,7 +33,7 @@ export async function getProgress(formationId: number) {
 }
 
 export async function updateProgress(
-  formationId: number,
+  formationId: string,
   completedLessons: string[],
 ) {
   try {
@@ -44,16 +43,11 @@ export async function updateProgress(
     }
 
     // Verify user owns the formation
-    const formations = await getFormations();
-    const formation = formations.find((f) => f.id === formationId);
-
-    if (!formation) {
-      return { success: false, error: "Formation not found" };
-    }
-
-    const orders = await getUserOrders(session.user.id);
-    const ownsFormation = orders.some((order) =>
-      order.items.some((item) => "title" in item && item.id === formation.id),
+    const { online: ownedOnlineFormations } = await getOwnedFormations(
+      session.user.id,
+    );
+    const ownsFormation = ownedOnlineFormations.some(
+      (f) => f._id?.valueOf() === formationId,
     );
 
     if (!ownsFormation) {
@@ -82,7 +76,7 @@ export async function updateProgress(
 
 // Placeholder quiz questions - keep in sync with quiz/page.tsx
 // Replace with DB-driven questions per formation when content is ready
-const QUIZ_ANSWERS: Record<number, number[]> = {
+const QUIZ_ANSWERS: Record<string, number[]> = {
   // formationId -> array of correct answer indices per question
 };
 
@@ -91,7 +85,7 @@ const PLACEHOLDER_CORRECT_ANSWERS = [0]; // matches PLACEHOLDER_QUESTIONS in qui
 const PASSING_THRESHOLD = 0.7;
 
 export async function submitQuiz(
-  formationId: number,
+  formationId: string,
   answers: { questionId: number; selectedAnswer: number }[],
 ) {
   try {
@@ -101,22 +95,18 @@ export async function submitQuiz(
     }
 
     // Verify user owns the formation
-    const formations = await getFormations();
-    const formation = formations.find((f) => f.id === formationId);
+    const { online: ownedOnlineFormations } = await getOwnedFormations(
+      session.user.id,
+    );
+    const formation = ownedOnlineFormations.find(
+      (f) => f._id?.valueOf() === formationId,
+    );
     if (!formation) {
       return { success: false, error: "Formation introuvable" };
     }
 
-    const orders = await getUserOrders(session.user.id);
-    const ownsFormation = orders.some((order) =>
-      order.items.some((item) => "title" in item && item.id === formation.id),
-    );
-    if (!ownsFormation) {
-      return { success: false, error: "Vous ne possédez pas cette formation" };
-    }
-
     // Verify all lessons are completed
-    const progress = await getFormationProgress(session.user.id, formation.id);
+    const progress = await getFormationProgress(session.user.id, formationId);
     const completedLessons = progress ? progress.completedLessons : [];
     const totalLessons =
       formation.sections?.reduce(
@@ -215,25 +205,21 @@ export async function submitQuiz(
   }
 }
 
-export async function resendCertificate(formationId: number) {
+export async function resendCertificate(formationId: string) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
       return { success: false, error: "Non authentifié" };
     }
 
-    const formations = await getFormations();
-    const formation = formations.find((f) => f.id === formationId);
+    const { online: ownedOnlineFormations } = await getOwnedFormations(
+      session.user.id,
+    );
+    const formation = ownedOnlineFormations.find(
+      (f) => f._id?.valueOf() === formationId,
+    );
     if (!formation) {
       return { success: false, error: "Formation introuvable" };
-    }
-
-    const orders = await getUserOrders(session.user.id);
-    const ownsFormation = orders.some((order) =>
-      order.items.some((item) => "title" in item && item.id === formation.id),
-    );
-    if (!ownsFormation) {
-      return { success: false, error: "Vous ne possédez pas cette formation" };
     }
 
     const quizResult = await getQuizResult(session.user.id, formationId);

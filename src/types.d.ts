@@ -71,7 +71,6 @@ export type Lesson = {
   id: number;
   title: string;
   content?: string;
-  duration?: string;
 };
 
 export type Section = {
@@ -85,7 +84,7 @@ export type TimeFrame = {
   from: string;
   to: string;
   name: string;
-  description: string;
+  description?: string;
 };
 
 export type Day = {
@@ -99,43 +98,59 @@ export type FormationSession = {
   endDate: Date;
   location: string;
   availableSpots: number;
+  participants?: string[];
+  reservedSpots?: number;
+  owned?: boolean;
   status: "open" | "ongoing" | "done";
 };
 
-export type Formation = {
-  _id?: string;
-  id: number;
+export type OnlineFormation = {
+  _id: string;
+  title: string;
+  description: string;
+  image: string;
+  duration?: string;
+  level: string;
+  price: number;
+  category: string;
+  type: "online";
+  sections?: Section[];
+  icon: string;
+  owners?: string[];
+  owned?: boolean;
+  stats?: {
+    totalSections: number;
+    totalLessons: number;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type PresentialFormation = {
+  _id: string;
   title: string;
   description: string;
   image: string;
   durationDays: number;
   level: string;
-  participants: string;
   price: number;
   category: string;
-  type: "online" | "presentiel";
-  sections?: {
-    id: number;
-    title: string;
-    description?: string;
-    lessons: {
-      id: number;
-      title: string;
-      content?: string;
-      duration?: string;
-    }[];
-  }[];
-  program?: Day[];
-  sessions?: FormationSession[];
-  address?: string;
+  type: "presentiel";
+  program: Day[];
+  sessions: FormationSession[];
+  address: string;
   contactPhone?: string;
   contactEmail?: string;
   icon: string;
+  maxParticipants?: number;
+  owned?: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
 
-export type CartItem = (Product | Formation) & {
+export type Formation = OnlineFormation | PresentialFormation;
+
+export type CartItem = (Product | OnlineFormation | PresentialFormation) & {
   quantity: number;
   selectedSessionId?: number; // For presentiel formations with multiple sessions
 };
@@ -188,7 +203,7 @@ export type Session = {
   };
 };
 
-export type OrderItem = CartItem & { sessionId?: number };
+export type OrderItem = CartItem & { sessionId?: number; id?: number };
 
 export type Order = {
   _id?: string;

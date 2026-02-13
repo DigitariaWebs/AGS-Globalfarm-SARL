@@ -1,6 +1,12 @@
 import { Heading, Text, Section, Hr } from "@react-email/components";
 import EmailLayout from "./EmailLayout";
-import type { Order, OrderItem, Formation, Product } from "@/types";
+import type {
+  Order,
+  OrderItem,
+  Formation,
+  Product,
+  PresentialFormation,
+} from "@/types";
 
 interface NewOrderNotificationEmailProps {
   order: Order;
@@ -17,7 +23,7 @@ export default function NewOrderNotificationEmail({
 }: NewOrderNotificationEmailProps) {
   const hasShippingItems = order.address !== undefined;
   const hasPresentialFormation = order.items.some(
-    (item) => "title" in item && item.type === "presentiel",
+    (item) => "title" in item && "sessions" in item,
   );
 
   return (
@@ -99,7 +105,7 @@ export default function NewOrderNotificationEmail({
           {order.items
             .filter((item) => "title" in item && item.type === "presentiel")
             .map((item, index) => {
-              const formation = item as Formation & OrderItem;
+              const formation = item as PresentialFormation & OrderItem;
               const session = formation.sessions?.find(
                 (s) => s.id === formation.sessionId,
               );

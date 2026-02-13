@@ -130,7 +130,7 @@ export default function CheckoutPage() {
               <div className="space-y-4">
                 {cart.map((item) => (
                   <motion.div
-                    key={item.id}
+                    key={item.category}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}

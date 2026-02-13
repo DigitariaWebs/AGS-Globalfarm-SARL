@@ -1,6 +1,12 @@
 import { Heading, Text, Button, Section, Hr } from "@react-email/components";
 import EmailLayout from "./EmailLayout";
-import type { Order, OrderItem, Formation, Product } from "@/types";
+import type {
+  Order,
+  OrderItem,
+  Formation,
+  Product,
+  PresentialFormation,
+} from "@/types";
 
 interface OrderConfirmationEmailProps {
   customerName: string;
@@ -14,7 +20,7 @@ export default function OrderConfirmationEmail({
   receiptUrl,
 }: OrderConfirmationEmailProps) {
   const hasPresentialFormation = order.items.some(
-    (item) => "title" in item && item.type === "presentiel",
+    (item) => "title" in item && "sessions" in item,
   );
 
   return (
@@ -70,9 +76,9 @@ export default function OrderConfirmationEmail({
         <Section style={infoBox}>
           <Text style={infoTitle}>🎓 Formation Présentielle</Text>
           {order.items
-            .filter((item) => "title" in item && item.type === "presentiel")
+            .filter((item) => "title" in item)
             .map((item, index) => {
-              const formation = item as Formation & OrderItem;
+              const formation = item as PresentialFormation & OrderItem;
               const session = formation.sessions?.find(
                 (s) => s.id === formation.sessionId,
               );

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IQuizResult extends Document {
   userId: string;
-  formationId: number;
+  formationId: string;
   score: number;
   totalQuestions: number;
   passed: boolean;
@@ -14,7 +14,7 @@ export interface IQuizResult extends Document {
 const QuizResultSchema = new Schema<IQuizResult>(
   {
     userId: { type: String, required: true },
-    formationId: { type: Number, required: true },
+    formationId: { type: String, required: true },
     score: { type: Number, required: true },
     totalQuestions: { type: Number, required: true },
     passed: { type: Boolean, required: true },

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IFormationProgress extends Document {
   userId: string;
-  formationId: number;
+  formationId: string;
   completedLessons: string[]; // Format: "sectionId-lessonId"
   lastAccessedAt: Date;
 }
@@ -10,7 +10,7 @@ export interface IFormationProgress extends Document {
 const FormationProgressSchema = new Schema<IFormationProgress>(
   {
     userId: { type: String, required: true },
-    formationId: { type: Number, required: true },
+    formationId: { type: String, required: true },
     completedLessons: [{ type: String }],
     lastAccessedAt: { type: Date, default: Date.now },
   },
@@ -24,6 +24,9 @@ FormationProgressSchema.index({ userId: 1, formationId: 1 }, { unique: true });
 
 const FormationProgress =
   mongoose.models.FormationProgress ||
-  mongoose.model<IFormationProgress>("FormationProgress", FormationProgressSchema);
+  mongoose.model<IFormationProgress>(
+    "FormationProgress",
+    FormationProgressSchema,
+  );
 
 export default FormationProgress;
