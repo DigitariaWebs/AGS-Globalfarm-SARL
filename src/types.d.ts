@@ -115,6 +115,9 @@ export type OnlineFormation = {
   category: string;
   type: "online";
   sections?: Section[];
+  quiz?: {
+    sections: QuizSection[];
+  };
   icon: string;
   owners?: string[];
   owned?: boolean;
@@ -240,11 +243,24 @@ export type FormationProgress = {
   updatedAt: Date;
 };
 
+export type QuizOption = {
+  id: string;
+  text: string;
+};
+
 export type QuizQuestion = {
   id: number;
   question: string;
-  options: string[];
-  correctAnswer: number; // index of the correct option
+  image?: string; // optional image URL for the question
+  points: number;
+  options: QuizOption[];
+  correctAnswer: string; // id of the correct option
+};
+
+export type QuizSection = {
+  id: number;
+  title: string;
+  questions: QuizQuestion[];
 };
 
 export type QuizResult = {
@@ -254,7 +270,14 @@ export type QuizResult = {
   score: number;
   totalQuestions: number;
   passed: boolean;
-  certificateSentAt?: Date;
+  certificateSent?: boolean;
+  answers: {
+    sectionId: number;
+    questionId: number;
+    selectedAnswer: string;
+    correct: boolean;
+  }[];
+  attemptDate: Date;
   completedAt: Date;
   createdAt: Date;
   updatedAt: Date;

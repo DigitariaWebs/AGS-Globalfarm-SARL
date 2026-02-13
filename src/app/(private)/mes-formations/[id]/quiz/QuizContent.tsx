@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import {
   CheckCircle,
   XCircle,
@@ -10,25 +11,32 @@ import {
   Loader2,
 } from "lucide-react";
 import { submitQuiz, resendCertificate } from "../../actions";
-import type { QuizQuestion } from "@/types";
+import type { QuizSection } from "@/types";
 
 interface QuizContentProps {
   formationId: string;
-  questions: QuizQuestion[];
+  sections: QuizSection[];
   userEmail: string;
   alreadyPassed: boolean;
   previousScore?: { score: number; total: number };
+  remainingAttempts: number;
+  attemptsToday: number;
 }
 
 export default function QuizContent({
   formationId,
-  questions,
+  sections,
   userEmail,
   alreadyPassed,
   previousScore,
+  remainingAttempts,
 }: QuizContentProps) {
+  // Flatten all questions from sections for state management
+  const allQuestions = sections.flatMap((section) =>
+    section.questions.map((q) => ({ ...q, sectionId: section.id })),
+  );
   const [selectedAnswers, setSelectedAnswers] = useState<
-    Record<number, number>
+    Record<number, string>
   >({});
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<{
@@ -36,6 +44,11 @@ export default function QuizContent({
     total: number;
     passed: boolean;
     certificateSent: boolean;
+    answers: {
+      sectionId: number;
+      questionId: number;
+      correct: boolean;
+    }[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -44,15 +57,15 @@ export default function QuizContent({
 
   const passingThreshold = 0.7;
 
-  const handleSelectAnswer = (questionId: number, answerIndex: number) => {
+  const handleSelectAnswer = (questionId: number, answerId: string) => {
     if (submitted) return;
     setSelectedAnswers((prev) => ({
       ...prev,
-      [questionId]: answerIndex,
+      [questionId]: answerId,
     }));
   };
 
-  const allAnswered = questions.every(
+  const allAnswered = allQuestions.every(
     (q) => selectedAnswers[q.id] !== undefined,
   );
 
@@ -61,7 +74,7 @@ export default function QuizContent({
 
     startTransition(async () => {
       setError(null);
-      const answers = questions.map((q) => ({
+      const answers = allQuestions.map((q) => ({
         questionId: q.id,
         selectedAnswer: selectedAnswers[q.id],
       }));
@@ -227,52 +240,81 @@ export default function QuizContent({
           <h3 className="text-lg font-semibold text-gray-900">
             Revue des réponses
           </h3>
-          {questions.map((question) => {
-            const selected = selectedAnswers[question.id];
-            const isCorrect = selected === question.correctAnswer;
+          {sections.map((section) => (
+            <div key={section.id} className="space-y-4">
+              <h4 className="text-md font-semibold text-gray-800 mt-6">
+                {section.title}
+              </h4>
+              {section.questions.map((question) => {
+                const answerFeedback = result.answers.find(
+                  (a) => a.questionId === question.id,
+                );
+                const selected = selectedAnswers[question.id];
+                const isCorrect = answerFeedback?.correct || false;
 
-            return (
-              <div
-                key={question.id}
-                className={`p-4 rounded-lg border ${
-                  isCorrect
-                    ? "border-green-200 bg-green-50"
-                    : "border-red-200 bg-red-50"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {isCorrect ? (
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
-                  )}
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">
-                      {question.question}
-                    </p>
-                    <div className="mt-2 space-y-1">
-                      {question.options.map((option, idx) => (
-                        <p
-                          key={idx}
-                          className={`text-sm ${
-                            idx === question.correctAnswer
-                              ? "text-green-700 font-semibold"
-                              : idx === selected && !isCorrect
-                                ? "text-red-600 line-through"
-                                : "text-gray-500"
-                          }`}
-                        >
-                          {idx === question.correctAnswer && "✓ "}
-                          {idx === selected && !isCorrect && "✗ "}
-                          {option}
+                return (
+                  <div
+                    key={question.id}
+                    className={`p-4 rounded-lg border ${
+                      isCorrect
+                        ? "border-green-200 bg-green-50"
+                        : "border-red-200 bg-red-50"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {isCorrect ? (
+                        <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">
+                          {question.question}
                         </p>
-                      ))}
+                        {question.image && (
+                          <div className="mt-2 relative w-full max-w-md">
+                            <Image
+                              src={question.image}
+                              alt="Question illustration"
+                              width={500}
+                              height={400}
+                              className="w-full h-auto rounded-lg border border-gray-200"
+                            />
+                          </div>
+                        )}
+                        <div className="mt-2 space-y-1">
+                          {question.options.map((option) => {
+                            const optionId =
+                              typeof option === "string" ? option : option.id;
+                            const optionText =
+                              typeof option === "string" ? option : option.text;
+                            const isSelectedOption = optionId === selected;
+
+                            return (
+                              <p
+                                key={optionId}
+                                className={`text-sm ${
+                                  isSelectedOption && isCorrect
+                                    ? "text-green-700 font-semibold"
+                                    : isSelectedOption && !isCorrect
+                                      ? "text-red-600"
+                                      : "text-gray-500"
+                                }`}
+                              >
+                                {isSelectedOption && isCorrect && "✓ "}
+                                {isSelectedOption && !isCorrect && "✗ "}
+                                {optionText}
+                              </p>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -281,66 +323,124 @@ export default function QuizContent({
   // Quiz form view
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Attempts Counter */}
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-blue-800 font-medium">
+          Tentatives restantes aujourd&apos;hui: {remainingAttempts}/3
+        </p>
+        {remainingAttempts === 0 && (
+          <p className="text-blue-600 text-sm mt-1">
+            Vous avez utilisé toutes vos tentatives. Revenez demain.
+          </p>
+        )}
+      </div>
+
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-600">{error}</p>
         </div>
       )}
 
-      <div className="space-y-6">
-        {questions.map((question, qIndex) => (
-          <div
-            key={question.id}
-            className="bg-white rounded-lg shadow-sm border p-6"
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {qIndex + 1}. {question.question}
-            </h3>
-            <div className="space-y-3">
-              {question.options.map((option, optionIndex) => {
-                const isSelected = selectedAnswers[question.id] === optionIndex;
+      <div className="space-y-8">
+        {sections.map((section, sectionIndex) => {
+          const sectionQuestionStart = sections
+            .slice(0, sectionIndex)
+            .reduce((sum, s) => sum + s.questions.length, 0);
+
+          return (
+            <div key={section.id} className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-green-600">
+                <h3 className="text-lg font-bold text-gray-900">
+                  {section.title}
+                </h3>
+              </div>
+
+              {section.questions.map((question, qIndex) => {
+                const globalIndex = sectionQuestionStart + qIndex;
 
                 return (
-                  <button
-                    key={optionIndex}
-                    onClick={() => handleSelectAnswer(question.id, optionIndex)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                      isSelected
-                        ? "border-green-600 bg-green-50 text-green-900"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                    }`}
+                  <div
+                    key={question.id}
+                    className="bg-white rounded-lg shadow-sm border p-6"
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          isSelected
-                            ? "border-green-600 bg-green-600"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {isSelected && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-white" />
-                        )}
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                      {globalIndex + 1}. {question.question}
+                      {question.points && (
+                        <span className="ml-2 text-sm text-gray-500 font-normal">
+                          ({question.points} point
+                          {question.points > 1 ? "s" : ""})
+                        </span>
+                      )}
+                    </h4>
+                    {question.image && (
+                      <div className="mb-4 relative w-full max-w-2xl">
+                        <Image
+                          src={question.image}
+                          alt="Question illustration"
+                          width={800}
+                          height={600}
+                          className="w-full h-auto rounded-lg border border-gray-200"
+                        />
                       </div>
-                      <span className="text-gray-800">{option}</span>
+                    )}
+                    <div className="space-y-3">
+                      {question.options.map((option) => {
+                        const optionId =
+                          typeof option === "string" ? option : option.id;
+                        const optionText =
+                          typeof option === "string" ? option : option.text;
+                        const isSelected =
+                          selectedAnswers[question.id] === optionId;
+
+                        return (
+                          <button
+                            key={optionId}
+                            onClick={() =>
+                              handleSelectAnswer(question.id, optionId)
+                            }
+                            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                              isSelected
+                                ? "border-green-600 bg-green-50 text-green-900"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                  isSelected
+                                    ? "border-green-600 bg-green-600"
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                                )}
+                              </div>
+                              <span className="text-gray-800">
+                                {optionText}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Progress and Submit */}
       <div className="mt-8 flex items-center justify-between">
         <p className="text-sm text-gray-500">
-          {Object.keys(selectedAnswers).length}/{questions.length} questions
+          {Object.keys(selectedAnswers).length}/{allQuestions.length} questions
           répondues
         </p>
         <button
           onClick={handleSubmit}
-          disabled={!allAnswered || isPending}
+          disabled={!allAnswered || isPending || remainingAttempts === 0}
           className="inline-flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? (

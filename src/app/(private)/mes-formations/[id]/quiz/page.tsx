@@ -1,24 +1,13 @@
 import { auth } from "@/lib/auth";
 import {
-  getFormationProgress,
+  getFormationQuiz,
   getQuizResult,
-  getOwnedFormations,
+  getQuizAttemptsToday,
 } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import BackButton from "../BackButton";
 import QuizContent from "./QuizContent";
-import type { QuizQuestion } from "@/types";
-
-// Placeholder quiz questions - replace with real content per formation
-const PLACEHOLDER_QUESTIONS: QuizQuestion[] = [
-  {
-    id: 1,
-    question: "Question 1 - Le contenu du quiz sera bientôt disponible.",
-    options: ["Option A", "Option B", "Option C", "Option D"],
-    correctAnswer: 0,
-  },
-];
 
 export default async function QuizPage({
   params,
@@ -32,29 +21,23 @@ export default async function QuizPage({
 
   const { id: formationId } = await params;
 
-  // Get formation details
-  const { online: formations } = await getOwnedFormations(session.user.id);
-  const formation = formations.find((f) => f._id?.valueOf() === formationId);
+  // Fetch quiz (includes ownership and completion checks)
+  const quizSections = await getFormationQuiz(session.user.id, formationId);
 
-  if (!formation) {
+  if (!quizSections || quizSections.length === 0) {
     redirect("/mes-formations");
   }
 
-  // Check if user has completed all lessons
-  const progress = await getFormationProgress(session.user.id, formation._id);
-  const completedLessons = progress ? progress.completedLessons : [];
-  const totalLessons =
-    formation.sections?.reduce(
-      (acc, section) => acc + section.lessons.length,
-      0,
-    ) || 0;
-
-  if (completedLessons.length < totalLessons) {
-    redirect(`/mes-formations/${formationId}`);
-  }
-
   // Check if user already passed
-  const existingResult = await getQuizResult(session.user.id, formation._id);
+  const existingResult = await getQuizResult(session.user.id, formationId);
+
+  // Get attempts today
+  const attemptsToday = await getQuizAttemptsToday(
+    session.user.id,
+    formationId,
+  );
+  const maxAttempts = 3;
+  const remainingAttempts = maxAttempts - attemptsToday;
 
   const user = session.user as { email: string };
 
@@ -63,7 +46,7 @@ export default async function QuizPage({
       <div className="mb-8">
         <BackButton />
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Quiz - {formation.title}
+          Quiz de Formation
         </h1>
         <p className="text-gray-600">
           Répondez aux questions suivantes pour obtenir votre certificat de
@@ -72,8 +55,8 @@ export default async function QuizPage({
       </div>
 
       <QuizContent
-        formationId={formation._id}
-        questions={PLACEHOLDER_QUESTIONS}
+        formationId={formationId}
+        sections={quizSections}
         userEmail={user.email}
         alreadyPassed={!!existingResult?.passed}
         previousScore={
@@ -84,6 +67,8 @@ export default async function QuizPage({
               }
             : undefined
         }
+        remainingAttempts={remainingAttempts}
+        attemptsToday={attemptsToday}
       />
     </div>
   );

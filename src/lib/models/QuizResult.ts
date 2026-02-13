@@ -7,7 +7,13 @@ export interface IQuizResult extends Document {
   totalQuestions: number;
   passed: boolean;
   certificateSent: boolean;
-  answers: { questionId: number; selectedAnswer: number; correct: boolean }[];
+  answers: {
+    sectionId: number;
+    questionId: number;
+    selectedAnswer: string;
+    correct: boolean;
+  }[];
+  attemptDate: Date;
   completedAt: Date;
 }
 
@@ -21,11 +27,13 @@ const QuizResultSchema = new Schema<IQuizResult>(
     certificateSent: { type: Boolean, default: false },
     answers: [
       {
+        sectionId: { type: Number, required: true },
         questionId: { type: Number, required: true },
-        selectedAnswer: { type: Number, required: true },
+        selectedAnswer: { type: String, required: true },
         correct: { type: Boolean, required: true },
       },
     ],
+    attemptDate: { type: Date, default: Date.now },
     completedAt: { type: Date, default: Date.now },
   },
   {

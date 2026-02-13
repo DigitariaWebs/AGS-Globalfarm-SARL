@@ -7,6 +7,9 @@ import type {
   OnlineFormation,
   PresentialFormation,
   FormationSession,
+  QuizSection,
+  QuizQuestion,
+  Section,
 } from "@/types";
 import OnlineFormationModel from "./models/OnlineFormation";
 import PresentialFormationModel from "./models/PresentialFormation";
@@ -36,8 +39,10 @@ export async function getOnlineFormations(
   try {
     await connectToDatabase();
 
-    // Fetch online formations with sections field to calculate stats
-    const onlineFormations = await OnlineFormationModel.find({}).lean();
+    // Fetch online formations with sections field to calculate stats, exclude quiz
+    const onlineFormations = await OnlineFormationModel.find({})
+      .select("-quiz")
+      .lean();
 
     // If user is logged in, check ownership
     if (userId) {
@@ -46,7 +51,8 @@ export async function getOnlineFormations(
         const totalSections = sections?.length || 0;
         const totalLessons =
           sections?.reduce(
-            (sum, section) => sum + (section.lessons?.length || 0),
+            (sum: number, section: Section) =>
+              sum + (section.lessons?.length || 0),
             0,
           ) || 0;
 
@@ -163,10 +169,12 @@ export async function getOwnedFormations(userId: string): Promise<{
       "sessions.participants": userId,
     }).lean();
 
-    // Get online formations where user is in owners
+    // Get online formations where user is in owners, exclude quiz
     const onlineFormations = await OnlineFormationModel.find({
       owners: userId,
-    }).lean();
+    })
+      .select("-quiz")
+      .lean();
 
     // Transform presential formations to remove participants and add reservedSpots
     const transformedPresential = presentialFormations.map((formation) => {
@@ -185,6 +193,7 @@ export async function getOwnedFormations(userId: string): Promise<{
 
     // Transform online formations to add stats and owned flag
     const transformedOnline = onlineFormations.map((formation) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { owners, ...rest } = formation;
 
       return {
@@ -268,13 +277,20 @@ export async function saveQuizResult(data: {
   score: number;
   totalQuestions: number;
   passed: boolean;
-  answers: { questionId: number; selectedAnswer: number; correct: boolean }[];
+  answers: {
+    sectionId: number;
+    questionId: number;
+    selectedAnswer: string;
+    correct: boolean;
+  }[];
+  attemptDate: Date;
 }): Promise<QuizResult | null> {
   try {
     await connectToDatabase();
     const result = await QuizResultModel.create({
       ...data,
       completedAt: new Date(),
+      attemptDate: data.attemptDate,
     });
     return result.toObject() as QuizResult;
   } catch (error) {
@@ -297,6 +313,93 @@ export async function markCertificateSent(
   } catch (error) {
     console.error("Failed to mark certificate sent", error);
     return false;
+  }
+}
+
+export async function getFormationQuiz(
+  userId: string,
+  formationId: string,
+): Promise<QuizSection[] | null> {
+  try {
+    await connectToDatabase();
+
+    // Check if user owns the formation
+    const formation = await OnlineFormationModel.findOne({
+      _id: formationId,
+      owners: userId,
+    })
+      .select("quiz sections")
+      .lean();
+
+    if (!formation) {
+      return null;
+    }
+
+    // Check if user completed all lessons
+    const progress = await FormationProgressModel.findOne({
+      userId,
+      formationId,
+    });
+
+    const completedLessons = progress ? progress.completedLessons : [];
+    const totalLessons =
+      formation.sections?.reduce(
+        (acc: number, section: Section) => acc + section.lessons.length,
+        0,
+      ) || 0;
+
+    if (completedLessons.length < totalLessons) {
+      return null;
+    }
+
+    // Return quiz without correct answers
+    if (!formation.quiz?.sections) {
+      return null;
+    }
+
+    const quizWithoutAnswers = formation.quiz.sections.map(
+      (section: QuizSection) => ({
+        id: section.id,
+        title: section.title,
+        questions: section.questions.map((question: QuizQuestion) => ({
+          id: question.id,
+          question: question.question,
+          image: question.image,
+          points: question.points,
+          options: question.options,
+        })),
+      }),
+    );
+
+    return quizWithoutAnswers as QuizSection[];
+  } catch (error) {
+    console.error("Failed to fetch formation quiz", error);
+    return null;
+  }
+}
+
+export async function getQuizAttemptsToday(
+  userId: string,
+  formationId: string,
+): Promise<number> {
+  try {
+    await connectToDatabase();
+
+    // Get start of today (00:00:00)
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    // Count attempts made today
+    const count = await QuizResultModel.countDocuments({
+      userId,
+      formationId,
+      attemptDate: { $gte: startOfDay },
+    });
+
+    return count;
+  } catch (error) {
+    console.error("Failed to get quiz attempts today", error);
+    return 0;
   }
 }
 

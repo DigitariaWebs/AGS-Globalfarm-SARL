@@ -9,10 +9,14 @@ import {
   saveQuizResult,
   getQuizResult,
   markCertificateSent,
+  getQuizAttemptsToday,
 } from "@/lib/db";
 import { generateCertificatePdf } from "@/lib/certificate";
 import { sendEmail } from "@/lib/email";
 import CertificateEmail from "@/emails/CertificateEmail";
+import OnlineFormationModel from "@/lib/models/OnlineFormation";
+import { connectToDatabase } from "@/lib/db";
+import type { QuizSection, QuizQuestion } from "@/types";
 
 export async function getProgress(formationId: string) {
   try {
@@ -74,19 +78,12 @@ export async function updateProgress(
   }
 }
 
-// Placeholder quiz questions - keep in sync with quiz/page.tsx
-// Replace with DB-driven questions per formation when content is ready
-const QUIZ_ANSWERS: Record<string, number[]> = {
-  // formationId -> array of correct answer indices per question
-};
-
-const PLACEHOLDER_CORRECT_ANSWERS = [0]; // matches PLACEHOLDER_QUESTIONS in quiz/page.tsx
-
 const PASSING_THRESHOLD = 0.7;
+const MAX_DAILY_ATTEMPTS = 3;
 
 export async function submitQuiz(
   formationId: string,
-  answers: { questionId: number; selectedAnswer: number }[],
+  answers: { questionId: number; selectedAnswer: string }[],
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -105,6 +102,30 @@ export async function submitQuiz(
       return { success: false, error: "Formation introuvable" };
     }
 
+    // Check if user has already passed
+    const existingPassedResult = await getQuizResult(
+      session.user.id,
+      formationId,
+    );
+    if (existingPassedResult?.passed) {
+      return {
+        success: false,
+        error: "Vous avez déjà réussi ce quiz",
+      };
+    }
+
+    // Check daily attempt limit
+    const attemptsToday = await getQuizAttemptsToday(
+      session.user.id,
+      formationId,
+    );
+    if (attemptsToday >= MAX_DAILY_ATTEMPTS) {
+      return {
+        success: false,
+        error: `Vous avez atteint la limite de ${MAX_DAILY_ATTEMPTS} tentatives par jour. Réessayez demain.`,
+      };
+    }
+
     // Verify all lessons are completed
     const progress = await getFormationProgress(session.user.id, formationId);
     const completedLessons = progress ? progress.completedLessons : [];
@@ -121,15 +142,40 @@ export async function submitQuiz(
       };
     }
 
-    // Grade the quiz
-    const correctAnswers =
-      QUIZ_ANSWERS[formationId] || PLACEHOLDER_CORRECT_ANSWERS;
+    // Fetch the actual quiz with correct answers
+    await connectToDatabase();
+    const formationWithQuiz = await OnlineFormationModel.findById(formationId)
+      .select("quiz")
+      .lean();
 
-    const gradedAnswers = answers.map((answer, index) => ({
-      questionId: answer.questionId,
-      selectedAnswer: answer.selectedAnswer,
-      correct: answer.selectedAnswer === (correctAnswers[index] ?? -1),
-    }));
+    if (!formationWithQuiz?.quiz?.sections) {
+      return { success: false, error: "Quiz introuvable" };
+    }
+
+    // Build a map of questionId -> {correctAnswer, sectionId}
+    const correctAnswersMap = new Map<
+      number,
+      { correctAnswer: string; sectionId: number }
+    >();
+    formationWithQuiz.quiz.sections.forEach((section: QuizSection) => {
+      section.questions.forEach((question: QuizQuestion) => {
+        correctAnswersMap.set(question.id, {
+          correctAnswer: question.correctAnswer,
+          sectionId: section.id,
+        });
+      });
+    });
+
+    // Grade the quiz
+    const gradedAnswers = answers.map((answer) => {
+      const questionData = correctAnswersMap.get(answer.questionId);
+      return {
+        sectionId: questionData?.sectionId || 0,
+        questionId: answer.questionId,
+        selectedAnswer: answer.selectedAnswer,
+        correct: answer.selectedAnswer === questionData?.correctAnswer,
+      };
+    });
 
     const score = gradedAnswers.filter((a) => a.correct).length;
     const totalQuestions = answers.length;
@@ -143,6 +189,7 @@ export async function submitQuiz(
       totalQuestions,
       passed,
       answers: gradedAnswers,
+      attemptDate: new Date(),
     });
 
     let certificateSent = false;
@@ -190,6 +237,13 @@ export async function submitQuiz(
       }
     }
 
+    // Build detailed feedback without revealing correct answers
+    const detailedAnswers = gradedAnswers.map((answer) => ({
+      sectionId: answer.sectionId,
+      questionId: answer.questionId,
+      correct: answer.correct,
+    }));
+
     return {
       success: true,
       data: {
@@ -197,6 +251,7 @@ export async function submitQuiz(
         total: totalQuestions,
         passed,
         certificateSent,
+        answers: detailedAnswers,
       },
     };
   } catch (error) {
