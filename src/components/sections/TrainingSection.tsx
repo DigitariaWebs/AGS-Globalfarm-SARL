@@ -49,7 +49,7 @@ export default function TrainingSection() {
             {/* Left Image */}
             <div className="flex-1">
               <Image
-                className="w-full h-[542px] object-cover rounded-lg shadow-lg"
+                className="w-full h-135 object-cover rounded-lg shadow-lg"
                 alt="Formation en serre agricole"
                 src="/Pickles.png"
                 width={900}
@@ -60,14 +60,14 @@ export default function TrainingSection() {
             {/* Right Stacked Images */}
             <div className="flex-1 flex flex-col gap-4">
               <Image
-                className="w-full h-[264px] object-cover rounded-lg shadow-lg"
+                className="w-full h-66 object-cover rounded-lg shadow-lg"
                 alt="Technologie drone en agriculture"
                 src="/Drone.png"
                 width={600}
                 height={264}
               />
               <Image
-                className="w-full h-[264px] object-cover rounded-lg shadow-lg"
+                className="w-full h-66 object-cover rounded-lg shadow-lg"
                 alt="Formation pratique terrain"
                 src="/BlackManWithPlants.png"
                 width={600}
@@ -95,7 +95,7 @@ export default function TrainingSection() {
             </div>
 
             {/* Description */}
-            <div className="font-normal text-muted-foreground text-lg leading-[35px]">
+            <div className="font-normal text-muted-foreground text-lg leading-9">
               Chez AGROPASTORAL GLOBALE FARMS, nous offrons un programme de
               formation complet conçu pour transformer votre passion en
               expertise professionnelle. De la maîtrise des techniques de

@@ -152,7 +152,10 @@ export default function Header() {
                       </Avatar>
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent
+                    align="end"
+                    className="bg-white border border-gray-200 shadow-lg"
+                  >
                     <DropdownMenuItem asChild>
                       <Link href="/orders">
                         <ShoppingBag className="w-4 h-4 mr-2" />
