@@ -9,6 +9,9 @@ import {
   RotateCcw,
   Mail,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
 } from "lucide-react";
 import { submitQuiz, resendCertificate } from "../../actions";
 import type { QuizSection } from "@/types";
@@ -31,10 +34,11 @@ export default function QuizContent({
   previousScore,
   remainingAttempts,
 }: QuizContentProps) {
-  // Flatten all questions from sections for state management
   const allQuestions = sections.flatMap((section) =>
     section.questions.map((q) => ({ ...q, sectionId: section.id })),
   );
+
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, string>
   >({});
@@ -44,11 +48,7 @@ export default function QuizContent({
     total: number;
     passed: boolean;
     certificateSent: boolean;
-    answers: {
-      sectionId: number;
-      questionId: number;
-      correct: boolean;
-    }[];
+    answers: { sectionId: number; questionId: number; correct: boolean }[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -56,31 +56,47 @@ export default function QuizContent({
   const [resendSuccess, setResendSuccess] = useState(false);
 
   const passingThreshold = 0.7;
+  const currentSection = sections[currentSectionIndex];
+  const isLastSection = currentSectionIndex === sections.length - 1;
+  const isFirstSection = currentSectionIndex === 0;
+
+  const answeredInSection = currentSection.questions.filter(
+    (q) => selectedAnswers[q.id] !== undefined,
+  ).length;
+  const allAnsweredInSection =
+    answeredInSection === currentSection.questions.length;
+
+  const totalAnswered = allQuestions.filter(
+    (q) => selectedAnswers[q.id] !== undefined,
+  ).length;
+  const allAnswered = totalAnswered === allQuestions.length;
+
+  const globalQuestionStart = sections
+    .slice(0, currentSectionIndex)
+    .reduce((sum, s) => sum + s.questions.length, 0);
 
   const handleSelectAnswer = (questionId: number, answerId: string) => {
     if (submitted) return;
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [questionId]: answerId,
-    }));
+    setSelectedAnswers((prev) => ({ ...prev, [questionId]: answerId }));
   };
 
-  const allAnswered = allQuestions.every(
-    (q) => selectedAnswers[q.id] !== undefined,
-  );
+  const handleNext = () => {
+    if (!isLastSection) setCurrentSectionIndex((i) => i + 1);
+  };
+
+  const handlePrev = () => {
+    if (!isFirstSection) setCurrentSectionIndex((i) => i - 1);
+  };
 
   const handleSubmit = () => {
     if (!allAnswered) return;
-
     startTransition(async () => {
       setError(null);
       const answers = allQuestions.map((q) => ({
         questionId: q.id,
         selectedAnswer: selectedAnswers[q.id],
       }));
-
       const res = await submitQuiz(formationId, answers);
-
       if (res.success && res.data) {
         setResult(res.data);
         setSubmitted(true);
@@ -95,6 +111,7 @@ export default function QuizContent({
     setSubmitted(false);
     setResult(null);
     setError(null);
+    setCurrentSectionIndex(0);
   };
 
   const handleResendCertificate = async () => {
@@ -103,9 +120,7 @@ export default function QuizContent({
     setError(null);
     try {
       const res = await resendCertificate(formationId);
-      if (!res.success) {
-        throw new Error(res.error || "Erreur lors de l'envoi");
-      }
+      if (!res.success) throw new Error(res.error || "Erreur lors de l'envoi");
       setResendSuccess(true);
     } catch {
       setError("Erreur lors de l'envoi du certificat.");
@@ -114,276 +129,377 @@ export default function QuizContent({
     }
   };
 
-  // Already passed view
+  // ── Already passed view ──────────────────────────────────────────────────
   if (alreadyPassed && !submitted) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-linear-to-r from-green-50 to-emerald-50 rounded-xl p-8 border border-green-200 text-center">
-          <Award className="w-16 h-16 text-green-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="max-w-xl mx-auto">
+        <div className="rounded-2xl border border-green-200 bg-linear-to-br from-green-50 to-emerald-50 p-10 text-center shadow-sm">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+            <Award className="h-10 w-10 text-green-600" />
+          </div>
+          <h2 className="mb-2 text-2xl font-bold text-gray-900">
             Vous avez déjà réussi ce quiz !
           </h2>
           {previousScore && (
-            <p className="text-gray-600 mb-4">
-              Score: {previousScore.score}/{previousScore.total} (
-              {Math.round((previousScore.score / previousScore.total) * 100)}%)
+            <p className="mb-1 text-gray-600">
+              Score :{" "}
+              <span className="font-semibold text-green-700">
+                {previousScore.score}/{previousScore.total}
+              </span>{" "}
+              ({Math.round((previousScore.score / previousScore.total) * 100)}%)
             </p>
           )}
-          <p className="text-gray-600 mb-6">
-            Votre certificat vous a été envoyé par email à{" "}
-            <strong>{userEmail}</strong>.
+          <p className="mb-8 text-sm text-gray-500">
+            Votre certificat a été envoyé à <strong>{userEmail}</strong>.
           </p>
           {resendSuccess && (
-            <p className="text-green-700 mb-4">
+            <p className="mb-4 rounded-lg bg-green-100 px-4 py-2 text-sm text-green-700">
               ✅ Le certificat a été renvoyé avec succès !
             </p>
           )}
-          {error && <p className="text-red-600 mb-4">{error}</p>}
+          {error && (
+            <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+              {error}
+            </p>
+          )}
           <button
             onClick={handleResendCertificate}
             disabled={isResending}
-            className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-green-700 disabled:opacity-50"
           >
             {isResending ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Mail className="w-5 h-5" />
+              <Mail className="h-4 w-4" />
             )}
-            {isResending
-              ? "Envoi en cours..."
-              : "Renvoyer le certificat par email"}
+            {isResending ? "Envoi en cours…" : "Renvoyer le certificat"}
           </button>
         </div>
       </div>
     );
   }
 
-  // Result view after submission
+  // ── Result view ──────────────────────────────────────────────────────────
   if (submitted && result) {
     const percentage = Math.round((result.score / result.total) * 100);
 
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Score card */}
         <div
-          className={`rounded-xl p-8 border text-center ${
+          className={`rounded-2xl border p-8 text-center shadow-sm ${
             result.passed
-              ? "bg-linear-to-r from-green-50 to-emerald-50 border-green-200"
-              : "bg-linear-to-r from-red-50 to-orange-50 border-red-200"
+              ? "border-green-200 bg-linear-to-br from-green-50 to-emerald-50"
+              : "border-red-200 bg-linear-to-br from-red-50 to-orange-50"
           }`}
         >
+          <div
+            className={`mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full ${
+              result.passed ? "bg-green-100" : "bg-red-100"
+            }`}
+          >
+            {result.passed ? (
+              <Award className="h-10 w-10 text-green-600" />
+            ) : (
+              <XCircle className="h-10 w-10 text-red-500" />
+            )}
+          </div>
+
           {result.passed ? (
             <>
-              <Award className="w-16 h-16 text-green-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">
                 Félicitations ! 🎉
               </h2>
-              <p className="text-gray-600 mb-2">
-                Vous avez réussi le quiz avec un score de{" "}
-                <strong>
+              <p className="mb-1 text-gray-700">
+                Score :{" "}
+                <span className="font-bold text-green-700">
                   {result.score}/{result.total}
-                </strong>{" "}
-                ({percentage}%).
+                </span>{" "}
+                <span className="text-green-600">({percentage}%)</span>
               </p>
               {result.certificateSent ? (
-                <p className="text-green-700 mb-6">
+                <p className="mt-4 text-sm text-green-700">
                   ✅ Votre certificat a été envoyé à{" "}
                   <strong>{userEmail}</strong>
                 </p>
               ) : (
-                <>
-                  <p className="text-orange-600 mb-4">
+                <div className="mt-4">
+                  <p className="mb-3 text-sm text-orange-600">
                     L&apos;envoi du certificat a échoué.
                   </p>
                   <button
                     onClick={handleResendCertificate}
                     disabled={isResending}
-                    className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-full bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-green-700 disabled:opacity-50"
                   >
                     {isResending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Mail className="w-5 h-5" />
+                      <Mail className="h-4 w-4" />
                     )}
-                    {isResending
-                      ? "Envoi en cours..."
-                      : "Renvoyer le certificat par email"}
+                    {isResending ? "Envoi en cours…" : "Renvoyer le certificat"}
                   </button>
-                </>
+                </div>
               )}
             </>
           ) : (
             <>
-              <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="mb-2 text-2xl font-bold text-gray-900">
                 Quiz non réussi
               </h2>
-              <p className="text-gray-600 mb-2">
-                Votre score: {result.score}/{result.total} ({percentage}%).
+              <p className="mb-1 text-gray-700">
+                Score :{" "}
+                <span className="font-bold text-red-600">
+                  {result.score}/{result.total}
+                </span>{" "}
+                ({percentage}%)
               </p>
-              <p className="text-gray-600 mb-6">
-                Vous devez obtenir au moins {Math.round(passingThreshold * 100)}
-                % pour recevoir le certificat. Révisez le contenu et réessayez.
+              <p className="mb-6 text-sm text-gray-500">
+                Minimum requis : {Math.round(passingThreshold * 100)}%. Révisez
+                le contenu et réessayez.
               </p>
               <button
                 onClick={handleRetry}
-                className="inline-flex items-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900 transition-colors font-medium"
+                className="inline-flex items-center gap-2 rounded-full bg-gray-800 px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-gray-900"
               >
-                <RotateCcw className="w-5 h-5" />
+                <RotateCcw className="h-4 w-4" />
                 Réessayer
               </button>
             </>
           )}
         </div>
 
-        {/* Show answers review */}
-        <div className="mt-8 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+        {/* Answers review */}
+        <div>
+          <h3 className="mb-4 text-lg font-bold text-gray-900">
             Revue des réponses
           </h3>
-          {sections.map((section) => (
-            <div key={section.id} className="space-y-4">
-              <h4 className="text-md font-semibold text-gray-800 mt-6">
-                {section.title}
-              </h4>
-              {section.questions.map((question) => {
-                const answerFeedback = result.answers.find(
-                  (a) => a.questionId === question.id,
-                );
-                const selected = selectedAnswers[question.id];
-                const isCorrect = answerFeedback?.correct || false;
+          <div className="space-y-6">
+            {sections.map((section) => (
+              <div key={section.id}>
+                <div className="mb-3 rounded-lg border-l-4 border-gray-400 bg-gray-50 px-4 py-2">
+                  <p className="font-semibold text-gray-700">{section.title}</p>
+                </div>
+                <div className="space-y-3">
+                  {section.questions.map((question) => {
+                    const feedback = result.answers.find(
+                      (a) => a.questionId === question.id,
+                    );
+                    const selected = selectedAnswers[question.id];
+                    const isCorrect = feedback?.correct ?? false;
 
-                return (
-                  <div
-                    key={question.id}
-                    className={`p-4 rounded-lg border ${
-                      isCorrect
-                        ? "border-green-200 bg-green-50"
-                        : "border-red-200 bg-red-50"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      {isCorrect ? (
-                        <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
-                      )}
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">
-                          {question.question}
-                        </p>
-                        {question.image && (
-                          <div className="mt-2 relative w-full max-w-md">
-                            <Image
-                              src={question.image}
-                              alt="Question illustration"
-                              width={500}
-                              height={400}
-                              className="w-full h-auto rounded-lg border border-gray-200"
-                            />
+                    return (
+                      <div
+                        key={question.id}
+                        className={`rounded-xl border p-4 ${
+                          isCorrect
+                            ? "border-green-200 bg-green-50"
+                            : "border-red-200 bg-red-50"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          {isCorrect ? (
+                            <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+                          ) : (
+                            <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+                          )}
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">
+                              {question.question}
+                            </p>
+                            {question.image && (
+                              <div className="mt-2 max-w-md">
+                                <Image
+                                  src={question.image}
+                                  alt="Question illustration"
+                                  width={500}
+                                  height={400}
+                                  className="w-full rounded-lg border border-gray-200"
+                                />
+                              </div>
+                            )}
+                            <div className="mt-2 space-y-1">
+                              {question.options.map((option) => {
+                                const optionId =
+                                  typeof option === "string"
+                                    ? option
+                                    : option.id;
+                                const optionText =
+                                  typeof option === "string"
+                                    ? option
+                                    : option.text;
+                                const isSelectedOption = optionId === selected;
+
+                                return (
+                                  <p
+                                    key={optionId}
+                                    className={`text-sm ${
+                                      isSelectedOption && isCorrect
+                                        ? "font-semibold text-green-700"
+                                        : isSelectedOption && !isCorrect
+                                          ? "font-semibold text-red-600"
+                                          : "text-gray-500"
+                                    }`}
+                                  >
+                                    {isSelectedOption && isCorrect && "✓ "}
+                                    {isSelectedOption && !isCorrect && "✗ "}
+                                    {optionText}
+                                  </p>
+                                );
+                              })}
+                            </div>
                           </div>
-                        )}
-                        <div className="mt-2 space-y-1">
-                          {question.options.map((option) => {
-                            const optionId =
-                              typeof option === "string" ? option : option.id;
-                            const optionText =
-                              typeof option === "string" ? option : option.text;
-                            const isSelectedOption = optionId === selected;
-
-                            return (
-                              <p
-                                key={optionId}
-                                className={`text-sm ${
-                                  isSelectedOption && isCorrect
-                                    ? "text-green-700 font-semibold"
-                                    : isSelectedOption && !isCorrect
-                                      ? "text-red-600"
-                                      : "text-gray-500"
-                                }`}
-                              >
-                                {isSelectedOption && isCorrect && "✓ "}
-                                {isSelectedOption && !isCorrect && "✗ "}
-                                {optionText}
-                              </p>
-                            );
-                          })}
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  // Quiz form view
+  // ── Quiz form view ───────────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Attempts Counter */}
-      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-blue-800 font-medium">
-          Tentatives restantes aujourd&apos;hui: {remainingAttempts}/3
-        </p>
-        {remainingAttempts === 0 && (
-          <p className="text-blue-600 text-sm mt-1">
-            Vous avez utilisé toutes vos tentatives. Revenez demain.
-          </p>
-        )}
-      </div>
-
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-600">{error}</p>
+      {/* Attempts banner */}
+      {remainingAttempts <= 1 && (
+        <div
+          className={`mb-5 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
+            remainingAttempts === 0
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-orange-200 bg-orange-50 text-orange-700"
+          }`}
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {remainingAttempts === 0
+            ? "Vous avez utilisé toutes vos tentatives aujourd'hui. Revenez demain."
+            : "Il vous reste 1 tentative aujourd'hui."}
         </div>
       )}
 
-      <div className="space-y-8">
-        {sections.map((section, sectionIndex) => {
-          const sectionQuestionStart = sections
-            .slice(0, sectionIndex)
-            .reduce((sum, s) => sum + s.questions.length, 0);
+      {error && (
+        <div className="mb-5 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* Overall progress bar */}
+      <div className="mb-6">
+        <div className="mb-1.5 flex items-center justify-between text-xs text-gray-500">
+          <span>
+            {totalAnswered}/{allQuestions.length} questions répondues
+          </span>
+          <span>
+            {Math.round((totalAnswered / allQuestions.length) * 100)}%
+          </span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+          <div
+            className="h-full rounded-full bg-green-600 transition-all duration-500"
+            style={{
+              width: `${(totalAnswered / allQuestions.length) * 100}%`,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Section tabs */}
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
+        {sections.map((section, index) => {
+          const sectionAnswered = section.questions.filter(
+            (q) => selectedAnswers[q.id] !== undefined,
+          ).length;
+          const sectionComplete = sectionAnswered === section.questions.length;
+          const isCurrent = index === currentSectionIndex;
 
           return (
-            <div key={section.id} className="space-y-4">
-              <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-green-600">
-                <h3 className="text-lg font-bold text-gray-900">
-                  {section.title}
-                </h3>
-              </div>
+            <button
+              key={section.id}
+              onClick={() => setCurrentSectionIndex(index)}
+              className={`relative shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+                isCurrent
+                  ? "bg-green-600 text-white shadow"
+                  : sectionComplete
+                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {sectionComplete && !isCurrent && <span className="mr-1">✓</span>}
+              Section {index + 1}
+            </button>
+          );
+        })}
+      </div>
 
-              {section.questions.map((question, qIndex) => {
-                const globalIndex = sectionQuestionStart + qIndex;
+      {/* Section card */}
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        {/* Section header */}
+        <div className="rounded-t-2xl border-b border-gray-100 bg-gray-50 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                Section {currentSectionIndex + 1} sur {sections.length}
+              </p>
+              <h3 className="mt-0.5 text-lg font-bold text-gray-900">
+                {currentSection.title}
+              </h3>
+            </div>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                allAnsweredInSection
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {answeredInSection}/{currentSection.questions.length}
+            </span>
+          </div>
+        </div>
 
-                return (
-                  <div
-                    key={question.id}
-                    className="bg-white rounded-lg shadow-sm border p-6"
+        {/* Questions */}
+        <div className="divide-y divide-gray-100">
+          {currentSection.questions.map((question, qIndex) => {
+            const globalIndex = globalQuestionStart + qIndex;
+            const isAnswered = selectedAnswers[question.id] !== undefined;
+
+            return (
+              <div key={question.id} className="px-6 py-6">
+                <div className="mb-4 flex items-start gap-3">
+                  <span
+                    className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                      isAnswered
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-200 text-gray-500"
+                    }`}
                   >
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                      {globalIndex + 1}. {question.question}
+                    {globalIndex + 1}
+                  </span>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">
+                      {question.question}
                       {question.points && (
-                        <span className="ml-2 text-sm text-gray-500 font-normal">
-                          ({question.points} point
-                          {question.points > 1 ? "s" : ""})
+                        <span className="ml-2 text-xs font-normal text-gray-400">
+                          ({question.points} pt{question.points > 1 ? "s" : ""})
                         </span>
                       )}
-                    </h4>
+                    </p>
                     {question.image && (
-                      <div className="mb-4 relative w-full max-w-2xl">
+                      <div className="mt-3 max-w-lg">
                         <Image
                           src={question.image}
                           alt="Question illustration"
                           width={800}
                           height={600}
-                          className="w-full h-auto rounded-lg border border-gray-200"
+                          className="w-full rounded-xl border border-gray-200"
                         />
                       </div>
                     )}
-                    <div className="space-y-3">
+                    <div className="mt-4 space-y-2.5">
                       {question.options.map((option) => {
                         const optionId =
                           typeof option === "string" ? option : option.id;
@@ -398,61 +514,79 @@ export default function QuizContent({
                             onClick={() =>
                               handleSelectAnswer(question.id, optionId)
                             }
-                            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                            className={`w-full rounded-xl border-2 p-3.5 text-left transition-all ${
                               isSelected
-                                ? "border-green-600 bg-green-50 text-green-900"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                ? "border-green-500 bg-green-50 text-green-900"
+                                : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
                             }`}
                           >
                             <div className="flex items-center gap-3">
                               <div
-                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
                                   isSelected
-                                    ? "border-green-600 bg-green-600"
+                                    ? "border-green-500 bg-green-500"
                                     : "border-gray-300"
                                 }`}
                               >
                                 {isSelected && (
-                                  <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                                  <div className="h-2 w-2 rounded-full bg-white" />
                                 )}
                               </div>
-                              <span className="text-gray-800">
-                                {optionText}
-                              </span>
+                              <span className="text-sm">{optionText}</span>
                             </div>
                           </button>
                         );
                       })}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          );
-        })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Section navigation footer */}
+        <div className="flex items-center justify-between rounded-b-2xl border-t border-gray-100 bg-gray-50 px-6 py-4">
+          <button
+            onClick={handlePrev}
+            disabled={isFirstSection}
+            className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Précédent
+          </button>
+
+          {isLastSection ? (
+            <button
+              onClick={handleSubmit}
+              disabled={!allAnswered || isPending || remainingAttempts === 0}
+              className="inline-flex items-center gap-2 rounded-full bg-green-600 px-6 py-2 text-sm font-semibold text-white shadow transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Vérification…
+                </>
+              ) : (
+                "Soumettre le quiz"
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={handleNext}
+              className="inline-flex items-center gap-1.5 rounded-full bg-green-600 px-5 py-2 text-sm font-semibold text-white shadow transition hover:bg-green-700"
+            >
+              Suivant
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Progress and Submit */}
-      <div className="mt-8 flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          {Object.keys(selectedAnswers).length}/{allQuestions.length} questions
-          répondues
-        </p>
-        <button
-          onClick={handleSubmit}
-          disabled={!allAnswered || isPending || remainingAttempts === 0}
-          className="inline-flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isPending ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Vérification...
-            </>
-          ) : (
-            "Soumettre le quiz"
-          )}
-        </button>
-      </div>
+      {/* Attempts counter (subtle) */}
+      <p className="mt-4 text-center text-xs text-gray-400">
+        {remainingAttempts}/3 tentatives restantes aujourd&apos;hui
+      </p>
     </div>
   );
 }
