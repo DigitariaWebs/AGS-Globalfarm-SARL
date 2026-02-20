@@ -11,7 +11,7 @@ export default async function OrdersPage() {
     redirect("/login");
   }
 
-  const orders = await getUserOrders(session.user.id);
+  const orders = await getUserOrders();
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen">

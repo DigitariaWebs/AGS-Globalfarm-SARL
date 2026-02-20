@@ -36,7 +36,10 @@ export interface IOnlineFormation extends Document {
     }[];
   };
   icon: string;
-  owners?: string[];
+  owners?: {
+    userId: string;
+    purchaseDate: Date;
+  }[];
 }
 
 const LessonSchema = new Schema(
@@ -106,7 +109,18 @@ const OnlineFormationSchema = new Schema<IOnlineFormation>(
     sections: { type: [SectionSchema], required: true },
     quiz: { type: QuizSchema, required: false },
     icon: { type: String, required: true },
-    owners: { type: [String], required: false },
+    owners: {
+      type: [
+        new Schema(
+          {
+            userId: { type: String, required: true },
+            purchaseDate: { type: Date, required: true },
+          },
+          { _id: false },
+        ),
+      ],
+      required: false,
+    },
   },
   {
     timestamps: true,

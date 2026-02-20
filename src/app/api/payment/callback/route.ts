@@ -177,7 +177,14 @@ export async function POST(request: NextRequest) {
             );
             await OnlineFormationModel.updateOne(
               { _id: onlineFormation._id },
-              { $addToSet: { owners: custom_data.userId } },
+              {
+                $push: {
+                  owners: {
+                    userId: custom_data.userId,
+                    purchaseDate: new Date(),
+                  },
+                },
+              },
             );
             console.log(
               `Added user ${custom_data.userId} to online formation ${onlineFormation._id} owners`,

@@ -1,4 +1,8 @@
+"use server";
+
 import mongoose from "mongoose";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import type {
   Product,
   Order,
@@ -10,6 +14,7 @@ import type {
   QuizSection,
   QuizQuestion,
   Section,
+  ContactFormData,
 } from "@/types";
 import OnlineFormationModel from "./models/OnlineFormation";
 import PresentialFormationModel from "./models/PresentialFormation";
@@ -17,8 +22,15 @@ import ProductModel, { IProduct } from "./models/Product";
 import OrderModel, { IOrder } from "./models/Order";
 import FormationProgressModel from "./models/FormationProgress";
 import QuizResultModel from "./models/QuizResult";
+import { generateCertificatePdf } from "./certificate";
+import { sendEmail } from "./email";
+import ContactEmail from "@/emails/ContactEmail";
+import CertificateEmail from "@/emails/CertificateEmail";
 
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
+
+const PASSING_THRESHOLD = 0.7;
+const MAX_DAILY_ATTEMPTS = 3;
 
 export async function connectToDatabase() {
   try {
@@ -33,10 +45,40 @@ export async function connectToDatabase() {
   }
 }
 
-export async function getOnlineFormations(
-  userId?: string,
-): Promise<OnlineFormation[]> {
+// Orders
+
+export async function getUserOrders(): Promise<Order[]> {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return [];
+    await connectToDatabase();
+    const orders = await OrderModel.find({ userId: session.user.id });
+    return orders.map((order: IOrder) => order.toObject() as Order);
+  } catch (error) {
+    console.error("Failed to fetch user orders", error);
+    return [];
+  }
+}
+
+// Products
+
+export async function getProducts(): Promise<Product[]> {
+  try {
+    await connectToDatabase();
+    const products = await ProductModel.find({});
+    return products.map((product: IProduct) => product.toObject() as Product);
+  } catch (error) {
+    console.error("Failed to fetch products", error);
+    return [];
+  }
+}
+
+// Formations
+
+export async function getPublicOnlineFormations(): Promise<OnlineFormation[]> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.user?.id;
     await connectToDatabase();
 
     // Fetch online formations with sections field to calculate stats, exclude quiz
@@ -58,7 +100,7 @@ export async function getOnlineFormations(
 
         return {
           ...rest,
-          owned: owners?.includes(userId) || false,
+          owned: isOwnerWithinAccessWindow(owners, userId),
           stats: {
             totalSections,
             totalLessons,
@@ -91,9 +133,11 @@ export async function getOnlineFormations(
   }
 }
 
-export async function getPresentialFormations(
-  userId?: string,
-): Promise<PresentialFormation[]> {
+export async function getPublicPresentialFormations(): Promise<
+  PresentialFormation[]
+> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const userId = session?.user?.id;
   try {
     await connectToDatabase();
 
@@ -135,33 +179,25 @@ export async function getPresentialFormations(
   }
 }
 
-export async function getProducts(): Promise<Product[]> {
-  try {
-    await connectToDatabase();
-    const products = await ProductModel.find({});
-    return products.map((product: IProduct) => product.toObject() as Product);
-  } catch (error) {
-    console.error("Failed to fetch products", error);
-    return [];
-  }
+function isOwnerWithinAccessWindow(
+  owners: { userId: string; purchaseDate: Date }[] | undefined,
+  userId: string,
+): boolean {
+  const entry = owners?.find((o) => o.userId === userId);
+  if (!entry) return false;
+  const threeMonthsLater = new Date(entry.purchaseDate);
+  threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+  return new Date() <= threeMonthsLater;
 }
 
-export async function getUserOrders(userId: string): Promise<Order[]> {
-  try {
-    await connectToDatabase();
-    const orders = await OrderModel.find({ userId });
-    return orders.map((order: IOrder) => order.toObject() as Order);
-  } catch (error) {
-    console.error("Failed to fetch user orders", error);
-    return [];
-  }
-}
-
-export async function getOwnedFormations(userId: string): Promise<{
+export async function getOwnedFormations(): Promise<{
   presential: PresentialFormation[];
   online: OnlineFormation[];
 }> {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return { presential: [], online: [] };
+    const userId = session.user.id;
     await connectToDatabase();
 
     // Get presential formations where user is in session participants
@@ -169,9 +205,9 @@ export async function getOwnedFormations(userId: string): Promise<{
       "sessions.participants": userId,
     }).lean();
 
-    // Get online formations where user is in owners, exclude quiz
+    // Get online formations where user is in owners within 3-month window, exclude quiz
     const onlineFormations = await OnlineFormationModel.find({
-      owners: userId,
+      "owners.userId": userId,
     })
       .select("-quiz")
       .lean();
@@ -192,14 +228,28 @@ export async function getOwnedFormations(userId: string): Promise<{
     }) as PresentialFormation[];
 
     // Transform online formations to add stats and owned flag
-    const transformedOnline = onlineFormations.map((formation) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { owners, ...rest } = formation;
-
-      return {
-        ...rest,
-      };
-    }) as OnlineFormation[];
+    const transformedOnline = onlineFormations
+      .filter((formation) =>
+        isOwnerWithinAccessWindow(
+          formation.owners as { userId: string; purchaseDate: Date }[],
+          userId,
+        ),
+      )
+      .map((formation) => {
+        const ownerEntry = (
+          formation.owners as { userId: string; purchaseDate: Date }[]
+        )?.find((o) => o.userId === userId);
+        const accessExpiresAt = ownerEntry
+          ? new Date(
+              new Date(ownerEntry.purchaseDate).setMonth(
+                new Date(ownerEntry.purchaseDate).getMonth() + 3,
+              ),
+            )
+          : undefined;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { owners, ...rest } = formation;
+        return { ...rest, accessExpiresAt };
+      }) as OnlineFormation[];
 
     return {
       presential: transformedPresential,
@@ -215,13 +265,14 @@ export async function getOwnedFormations(userId: string): Promise<{
 }
 
 export async function getFormationProgress(
-  userId: string,
   formationId: string,
 ): Promise<FormationProgress | null> {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return null;
     await connectToDatabase();
     const progress = await FormationProgressModel.findOne({
-      userId,
+      userId: session.user.id,
       formationId,
     });
     return progress ? (progress.toObject() as FormationProgress) : null;
@@ -232,14 +283,15 @@ export async function getFormationProgress(
 }
 
 export async function updateFormationProgress(
-  userId: string,
   formationId: string,
   completedLessons: string[],
 ): Promise<FormationProgress | null> {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return null;
     await connectToDatabase();
     const progress = await FormationProgressModel.findOneAndUpdate(
-      { userId, formationId },
+      { userId: session.user.id, formationId },
       {
         completedLessons,
         lastAccessedAt: new Date(),
@@ -253,14 +305,17 @@ export async function updateFormationProgress(
   }
 }
 
+// Quiz
+
 export async function getQuizResult(
-  userId: string,
   formationId: string,
 ): Promise<QuizResult | null> {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return null;
     await connectToDatabase();
     const result = await QuizResultModel.findOne({
-      userId,
+      userId: session.user.id,
       formationId,
       passed: true,
     }).sort({ completedAt: -1 });
@@ -272,7 +327,6 @@ export async function getQuizResult(
 }
 
 export async function saveQuizResult(data: {
-  userId: string;
   formationId: string;
   score: number;
   totalQuestions: number;
@@ -286,9 +340,12 @@ export async function saveQuizResult(data: {
   attemptDate: Date;
 }): Promise<QuizResult | null> {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return null;
     await connectToDatabase();
     const result = await QuizResultModel.create({
       ...data,
+      userId: session.user.id,
       completedAt: new Date(),
       attemptDate: data.attemptDate,
     });
@@ -300,13 +357,14 @@ export async function saveQuizResult(data: {
 }
 
 export async function markCertificateSent(
-  userId: string,
   formationId: string,
 ): Promise<boolean> {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return false;
     await connectToDatabase();
     await QuizResultModel.updateOne(
-      { userId, formationId, passed: true },
+      { userId: session.user.id, formationId, passed: true },
       { $set: { certificateSent: true } },
     );
     return true;
@@ -317,21 +375,29 @@ export async function markCertificateSent(
 }
 
 export async function getFormationQuiz(
-  userId: string,
   formationId: string,
 ): Promise<QuizSection[] | null> {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return null;
+    const userId = session.user.id;
     await connectToDatabase();
 
     // Check if user owns the formation
     const formation = await OnlineFormationModel.findOne({
       _id: formationId,
-      owners: userId,
+      "owners.userId": userId,
     })
       .select("quiz sections")
       .lean();
 
-    if (!formation) {
+    if (
+      !formation ||
+      !isOwnerWithinAccessWindow(
+        formation.owners as { userId: string; purchaseDate: Date }[],
+        userId,
+      )
+    ) {
       return null;
     }
 
@@ -379,10 +445,12 @@ export async function getFormationQuiz(
 }
 
 export async function getQuizAttemptsToday(
-  userId: string,
   formationId: string,
 ): Promise<number> {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return 0;
+    const userId = session.user.id;
     await connectToDatabase();
 
     // Get start of today (00:00:00)
@@ -402,5 +470,330 @@ export async function getQuizAttemptsToday(
     return 0;
   }
 }
+// Contact
 
-export { mongoose };
+export async function sendContactEmail(formData: ContactFormData) {
+  try {
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.subject ||
+      !formData.message
+    ) {
+      return {
+        success: false,
+        error: "Tous les champs requis doivent être remplis.",
+      };
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      return {
+        success: false,
+        error: "Veuillez fournir une adresse email valide.",
+      };
+    }
+
+    const adminEmail = process.env.STORE_EMAIL;
+    if (!adminEmail) {
+      console.error("STORE_EMAIL environment variable is not set");
+      return {
+        success: false,
+        error:
+          "Configuration email manquante. Veuillez contacter l'administrateur.",
+      };
+    }
+
+    await sendEmail({
+      to: adminEmail,
+      subject: `Nouveau message de contact - ${formData.name}`,
+      template: ContactEmail({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        subject: formData.subject,
+        message: formData.message,
+      }),
+    });
+
+    return {
+      success: true,
+      message:
+        "Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais.",
+    };
+  } catch (error) {
+    console.error("Error sending contact email:", error);
+    return {
+      success: false,
+      error:
+        "Une erreur s'est produite lors de l'envoi de votre message. Veuillez réessayer plus tard.",
+    };
+  }
+}
+
+// Formation actions
+
+export async function getProgress(formationId: string) {
+  try {
+    const progress = await getFormationProgress(formationId);
+    return {
+      success: true,
+      data: progress ? progress.completedLessons : [],
+    };
+  } catch (error) {
+    console.error("Failed to get progress", error);
+    return { success: false, error: "Failed to get progress" };
+  }
+}
+
+export async function updateProgress(
+  formationId: string,
+  completedLessons: string[],
+) {
+  try {
+    const { online: ownedOnlineFormations } = await getOwnedFormations();
+    const ownsFormation = ownedOnlineFormations.some(
+      (f) => f._id?.valueOf() === formationId,
+    );
+
+    if (!ownsFormation) {
+      return { success: false, error: "You don't own this formation" };
+    }
+
+    const progress = await updateFormationProgress(
+      formationId,
+      completedLessons,
+    );
+
+    if (!progress) {
+      return { success: false, error: "Failed to update progress" };
+    }
+
+    return {
+      success: true,
+      data: progress.completedLessons,
+    };
+  } catch (error) {
+    console.error("Failed to update progress", error);
+    return { success: false, error: "Failed to update progress" };
+  }
+}
+
+export async function submitQuiz(
+  formationId: string,
+  answers: { questionId: number; selectedAnswer: string }[],
+) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return { success: false, error: "Non authentifié" };
+    const user = session.user as {
+      id: string;
+      firstName?: string;
+      lastName?: string;
+      email: string;
+    };
+    const { online: ownedOnlineFormations } = await getOwnedFormations();
+    const formation = ownedOnlineFormations.find(
+      (f) => f._id?.valueOf() === formationId,
+    );
+    if (!formation) {
+      return { success: false, error: "Formation introuvable" };
+    }
+
+    const existingPassedResult = await getQuizResult(formationId);
+    if (existingPassedResult?.passed) {
+      return { success: false, error: "Vous avez déjà réussi ce quiz" };
+    }
+
+    const attemptsToday = await getQuizAttemptsToday(formationId);
+    if (attemptsToday >= MAX_DAILY_ATTEMPTS) {
+      return {
+        success: false,
+        error: `Vous avez atteint la limite de ${MAX_DAILY_ATTEMPTS} tentatives par jour. Réessayez demain.`,
+      };
+    }
+
+    const progress = await getFormationProgress(formationId);
+    const completedLessons = progress ? progress.completedLessons : [];
+    const totalLessons =
+      formation.sections?.reduce(
+        (acc, section) => acc + section.lessons.length,
+        0,
+      ) || 0;
+
+    if (completedLessons.length < totalLessons) {
+      return {
+        success: false,
+        error: "Vous devez terminer toutes les leçons avant de passer le quiz",
+      };
+    }
+
+    await connectToDatabase();
+    const formationWithQuiz = await OnlineFormationModel.findById(formationId)
+      .select("quiz")
+      .lean();
+
+    if (!formationWithQuiz?.quiz?.sections) {
+      return { success: false, error: "Quiz introuvable" };
+    }
+
+    const correctAnswersMap = new Map<
+      number,
+      { correctAnswer: string; sectionId: number }
+    >();
+    formationWithQuiz.quiz.sections.forEach((section: QuizSection) => {
+      section.questions.forEach((question: QuizQuestion) => {
+        correctAnswersMap.set(question.id, {
+          correctAnswer: question.correctAnswer,
+          sectionId: section.id,
+        });
+      });
+    });
+
+    const gradedAnswers = answers.map((answer) => {
+      const questionData = correctAnswersMap.get(answer.questionId);
+      return {
+        sectionId: questionData?.sectionId || 0,
+        questionId: answer.questionId,
+        selectedAnswer: answer.selectedAnswer,
+        correct: answer.selectedAnswer === questionData?.correctAnswer,
+      };
+    });
+
+    const score = gradedAnswers.filter((a) => a.correct).length;
+    const totalQuestions = answers.length;
+    const passed = score / totalQuestions >= PASSING_THRESHOLD;
+
+    await saveQuizResult({
+      formationId,
+      score,
+      totalQuestions,
+      passed,
+      answers: gradedAnswers,
+      attemptDate: new Date(),
+    });
+
+    let certificateSent = false;
+
+    if (passed) {
+      try {
+        const userName =
+          `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email;
+
+        const pdfBytes = await generateCertificatePdf({
+          userName,
+          formationTitle: formation.title,
+          completionDate: new Date(),
+        });
+
+        await sendEmail({
+          to: user.email,
+          subject: `Votre certificat - ${formation.title}`,
+          template: CertificateEmail({
+            userName,
+            formationTitle: formation.title,
+            quizScore: score,
+            totalQuestions,
+          }),
+          attachments: [
+            {
+              filename: `certificat-${formation.title.replace(/\s+/g, "-").toLowerCase()}.pdf`,
+              content: pdfBytes,
+              contentType: "application/pdf",
+            },
+          ],
+        });
+
+        await markCertificateSent(formationId);
+        certificateSent = true;
+      } catch (emailError) {
+        console.error("Failed to send certificate email:", emailError);
+      }
+    }
+
+    const detailedAnswers = gradedAnswers.map((answer) => ({
+      sectionId: answer.sectionId,
+      questionId: answer.questionId,
+      correct: answer.correct,
+    }));
+
+    return {
+      success: true,
+      data: {
+        score,
+        total: totalQuestions,
+        passed,
+        certificateSent,
+        answers: detailedAnswers,
+      },
+    };
+  } catch (error) {
+    console.error("Failed to submit quiz", error);
+    return { success: false, error: "Erreur lors de la soumission du quiz" };
+  }
+}
+
+export async function resendCertificate(formationId: string) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) return { success: false, error: "Non authentifié" };
+    const user = session.user as {
+      id: string;
+      firstName?: string;
+      lastName?: string;
+      email: string;
+    };
+    const { online: ownedOnlineFormations } = await getOwnedFormations();
+    const formation = ownedOnlineFormations.find(
+      (f) => f._id?.valueOf() === formationId,
+    );
+    if (!formation) {
+      return { success: false, error: "Formation introuvable" };
+    }
+
+    const quizResult = await getQuizResult(formationId);
+    if (!quizResult?.passed) {
+      return {
+        success: false,
+        error: "Vous devez réussir le quiz pour obtenir le certificat",
+      };
+    }
+
+    const userName =
+      `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email;
+
+    const pdfBytes = await generateCertificatePdf({
+      userName,
+      formationTitle: formation.title,
+      completionDate: quizResult.completedAt
+        ? new Date(quizResult.completedAt)
+        : new Date(),
+    });
+
+    await sendEmail({
+      to: user.email,
+      subject: `Votre certificat - ${formation.title}`,
+      template: CertificateEmail({
+        userName,
+        formationTitle: formation.title,
+        quizScore: quizResult.score,
+        totalQuestions: quizResult.totalQuestions,
+      }),
+      attachments: [
+        {
+          filename: `certificat-${formation.title.replace(/\s+/g, "-").toLowerCase()}.pdf`,
+          content: pdfBytes,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Certificate resend error:", error);
+    return {
+      success: false,
+      error: "Erreur lors de l'envoi du certificat",
+    };
+  }
+}

@@ -1,11 +1,11 @@
 import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import {
   getFormationQuiz,
   getQuizResult,
   getQuizAttemptsToday,
 } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import BackButton from "../BackButton";
 import QuizContent from "./QuizContent";
 
@@ -15,31 +15,25 @@ export default async function QuizPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
-    redirect("/login");
-  }
+  if (!session?.user?.id) redirect("/login");
+  const userEmail = (session.user as { email: string }).email;
 
   const { id: formationId } = await params;
 
   // Fetch quiz (includes ownership and completion checks)
-  const quizSections = await getFormationQuiz(session.user.id, formationId);
+  const quizSections = await getFormationQuiz(formationId);
 
   if (!quizSections || quizSections.length === 0) {
     redirect("/mes-formations");
   }
 
   // Check if user already passed
-  const existingResult = await getQuizResult(session.user.id, formationId);
+  const existingResult = await getQuizResult(formationId);
 
   // Get attempts today
-  const attemptsToday = await getQuizAttemptsToday(
-    session.user.id,
-    formationId,
-  );
+  const attemptsToday = await getQuizAttemptsToday(formationId);
   const maxAttempts = 3;
   const remainingAttempts = maxAttempts - attemptsToday;
-
-  const user = session.user as { email: string };
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen">
@@ -57,7 +51,7 @@ export default async function QuizPage({
       <QuizContent
         formationId={formationId}
         sections={quizSections}
-        userEmail={user.email}
+        userEmail={userEmail}
         alreadyPassed={!!existingResult?.passed}
         previousScore={
           existingResult

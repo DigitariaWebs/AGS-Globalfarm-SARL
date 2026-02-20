@@ -18,7 +18,7 @@ import {
 } from "@radix-ui/react-dialog";
 import Link from "next/link";
 import type { Section, Lesson, OnlineFormation } from "@/types";
-import { updateProgress } from "../actions";
+import { updateProgress } from "@/lib/db";
 
 interface FormationContentProps {
   formation: OnlineFormation;

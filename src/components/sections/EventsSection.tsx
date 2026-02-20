@@ -38,7 +38,7 @@ export default function EventsSection({
       if (availableSessions.length === 0) return null;
 
       return {
-        formation,
+        formation: { ...formation, type: "presentiel" as const },
         sessions: availableSessions,
       };
     })
@@ -49,7 +49,7 @@ export default function EventsSection({
 
   // Convert online formations to carousel items (they don't have sessions)
   const onlineItems = onlineFormations.map((formation) => ({
-    formation,
+    formation: { ...formation, type: "online" as const },
     sessions: [] as FormationSession[],
   }));
 
@@ -147,7 +147,7 @@ export default function EventsSection({
 
         {/* Carousel Container */}
         <div className="relative">
-          <div className="relative h-[450px] sm:h-[500px] md:h-[550px] lg:h-[600px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl">
+          <div className="relative h-112 sm:h-125 md:h-140 lg:h-150 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentIndex}
@@ -163,7 +163,7 @@ export default function EventsSection({
                   fill
                   className="object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
 
                 {/* Content Overlay */}
                 <div className="absolute inset-0 p-4 sm:p-6 md:p-8 flex flex-col justify-end text-white">
@@ -277,7 +277,7 @@ export default function EventsSection({
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span className="text-[11px] sm:text-xs">
-                          Accès illimité à vie
+                          Accès 3 mois
                         </span>
                       </div>
                     </div>
@@ -346,7 +346,7 @@ export default function EventsSection({
                   onClick={() => handleDotClick(index)}
                   className={`h-1.5 sm:h-2 rounded-full transition-all ${
                     index === currentIndex
-                      ? "w-6 sm:w-8 bg-[var(--color-brand,#16a34a)]"
+                      ? "w-6 sm:w-8 bg-(--color-brand,#16a34a)"
                       : "w-1.5 sm:w-2 bg-gray-300 hover:bg-gray-400"
                   }`}
                   aria-label={`Go to formation ${index + 1}`}

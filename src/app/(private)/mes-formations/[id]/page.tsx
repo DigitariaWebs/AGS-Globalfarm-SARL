@@ -20,9 +20,7 @@ export default async function FormationDetailPage({
   const { id: formationId } = await params;
 
   // Check if user owns this formation
-  const { online: ownedOnlineFormations } = await getOwnedFormations(
-    session.user.id,
-  );
+  const { online: ownedOnlineFormations } = await getOwnedFormations();
   const formation = ownedOnlineFormations.find(
     (f) => f._id?.valueOf() === formationId,
   );
@@ -32,7 +30,7 @@ export default async function FormationDetailPage({
   }
 
   // Get user progress
-  const progress = await getFormationProgress(session.user.id, formationId);
+  const progress = await getFormationProgress(formationId);
   const initialProgress = progress ? progress.completedLessons : [];
 
   // Filter out content from inaccessible lessons

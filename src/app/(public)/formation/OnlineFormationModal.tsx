@@ -104,7 +104,7 @@ export default function OnlineFormationModal({
                 Durée
               </p>
               <p className="font-bold text-gray-900 text-base">
-                {program.duration || "Illimité"}
+                {program.duration || "3 mois"}
               </p>
             </div>
             <div className="text-center bg-white p-3 rounded-xl shadow-sm border border-green-200">

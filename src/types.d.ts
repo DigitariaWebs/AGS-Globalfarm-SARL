@@ -119,7 +119,11 @@ export type OnlineFormation = {
     sections: QuizSection[];
   };
   icon: string;
-  owners?: string[];
+  owners?: {
+    userId: string;
+    purchaseDate: Date;
+  }[];
+  accessExpiresAt?: Date;
   owned?: boolean;
   stats?: {
     totalSections: number;

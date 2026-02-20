@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -21,7 +21,7 @@ import {
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { sendContactEmail } from "./actions";
+import { sendContactEmail } from "@/lib/db";
 
 const contactInfo = [
   {
@@ -111,7 +111,9 @@ const faqs = [
 
 function ContactPageContent() {
   const searchParams = useSearchParams();
-  const [backgroundColor, setBackgroundColor] = useState("#faf9f6");
+  const backgroundColor = window.getComputedStyle(
+    document.body,
+  ).backgroundColor;
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -123,13 +125,6 @@ function ContactPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const initializedRef = useRef(false);
-
-  // Get the actual background color from the body element
-  useLayoutEffect(() => {
-    const bodyBg = window.getComputedStyle(document.body).backgroundColor;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setBackgroundColor(bodyBg);
-  }, []);
 
   // Pre-fill form from query parameters
   useEffect(() => {
@@ -192,7 +187,7 @@ function ContactPageContent() {
       } else {
         setErrorMessage(result.error || "Une erreur s'est produite");
       }
-    } catch (error) {
+    } catch {
       setErrorMessage("Une erreur s'est produite lors de l'envoi");
     } finally {
       setIsLoading(false);

@@ -466,7 +466,7 @@ export default function FormationClientPage({
                     <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
                       <div className="flex items-center gap-1.5 text-gray-600">
                         <Clock className="w-4 h-4" />
-                        <span>{program.duration || "Illimité"}</span>
+                        <span>{program.duration || "3 mois"}</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-gray-600">
                         <Award className="w-4 h-4" />

@@ -18,7 +18,7 @@ export default async function MesFormationsPage() {
   }
 
   const { presential: presentialFormations, online: onlineFormations } =
-    await getOwnedFormations(session.user.id);
+    await getOwnedFormations();
 
   // Serialize formations to plain objects
   const serializedOnline: OnlineFormation[] = JSON.parse(

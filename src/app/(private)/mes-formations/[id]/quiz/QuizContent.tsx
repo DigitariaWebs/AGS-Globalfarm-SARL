@@ -13,7 +13,7 @@ import {
   ChevronRight,
   AlertCircle,
 } from "lucide-react";
-import { submitQuiz, resendCertificate } from "../../actions";
+import { submitQuiz, resendCertificate } from "@/lib/db";
 import type { QuizSection } from "@/types";
 
 interface QuizContentProps {
